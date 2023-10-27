@@ -107,6 +107,44 @@ func GetShoppingList(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, items)
 }
 
+func AddItemToShoppingList(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	var shoppingList database.ShoppingList
+	if err := c.ShouldBindUri(&shoppingList); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
+		return
+	}
+
+	shoppingListModel, err := shoppingList.Read(db)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
+		return
+	}
+
+	shoppingListObj := shoppingListModel.(*database.ShoppingList)
+	var item database.Item
+
+	bindingErr := c.ShouldBind(&item) 
+	if bindingErr != nil {
+		fmt.Println(err.Error())
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
+		return
+	}
+
+	item.List = *shoppingListObj
+	_, createErr := item.Create(db)
+	if createErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating Item"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "Item added to list successfully"})
+}
+
 func Login(c *gin.Context) {
 	if isLoggedIn(c) {
 		c.Redirect(http.StatusFound, "/lists")
@@ -158,7 +196,14 @@ func getUsernameFromCookie(c *gin.Context) (string, error) {
 		return "", decodeErr
 	}
 
-	return string(username), nil
+	usernameStr := string(username)
+	user := database.User{Username: usernameStr}
+	_, readErr := user.Read(db)
+	if readErr != nil {
+		return "", readErr
+	}
+
+	return usernameStr, nil
 }
 
 func isLoggedIn(c *gin.Context) bool {

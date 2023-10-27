@@ -25,8 +25,8 @@ type User struct {
 
 type Item struct {
 	Id   int64  `json:"id" uri:"id"`
-	Name string `json:"name"`
-	Done bool   `json:"done"`
+	Name string `json:"name" form:"itemName"`
+	Done bool   `json:"done" form:"itemDone"`
 	List ShoppingList `json:"list"`
 }
 
