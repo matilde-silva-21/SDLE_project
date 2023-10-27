@@ -20,14 +20,16 @@ func main() {
 	}
 
 	sqliteRepository := database.NewSQLiteRepository(db)
-	sqliteRepository.CreateTables()
-	sqliteRepository.Seed()
-
-	modelToUpdate := &database.Item{Id: 1}
-	modelToUpdate.Update(sqliteRepository, &database.Item{Id: modelToUpdate.Id, Name: "Updated", Done: modelToUpdate.Done})
+	createError := sqliteRepository.CreateTables()
+	if createError != nil {
+		fmt.Println(createError.Error())
+		return
+	}
 	
-	modelToDelete := database.Item{Id: 2}
-	modelToDelete.Delete(sqliteRepository)
+	seedError := sqliteRepository.Seed()
+	if seedError != nil {
+		fmt.Println(seedError.Error())
+	}
 
 	router := gin.Default()
 	api.SetDB(sqliteRepository)
@@ -37,7 +39,12 @@ func main() {
 		return
 	}
 	
-	router.GET("/items", api.GetAllItems)
+	//router.GET("/lists/:url/items", api.GetAllItems)
+	//router.GET("/items/:id", api.GetItem)
+	router.POST("/login", api.Login)
+	//router.GET("/login", api.LoginPage)
+	router.GET("/lists", api.GetShoppingLists)
+	router.GET("/lists/:url", api.GetShoppingList)
 
 	router.Run("localhost:8080")
 }
