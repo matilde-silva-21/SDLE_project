@@ -39,7 +39,70 @@ func GetItem(c* gin.Context) {
 	c.IndentedJSON(http.StatusOK, item)
 }
 
+func CreateShoppingList(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	username, cookieErr := getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error reading username from cookie"})
+		return
+	}
+
+	var shoppingList database.ShoppingList
+	if err := c.ShouldBind(&shoppingList); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
+		return
+	}
+
+	newShoppingListModel, createErr := shoppingList.Create(db)
+	if createErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
+		return
+	}
+
+	newShoppingList := newShoppingListModel.(*database.ShoppingList)
+
+	var userList database.UserList
+	userList.ListID = newShoppingList.Id
+	userList.UserID = username
+	userList.Create(db)
+	
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "shopping list created successfully"})
+}
+
+func RemoveShoppingList(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	var shoppingList database.ShoppingList
+	if err := c.ShouldBind(&shoppingList); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
+		return
+	}
+
+	shoppingListModel, _ := shoppingList.Read(db)
+	shoppingListObj := shoppingListModel.(*database.ShoppingList)
+
+	deleteErr := shoppingListObj.Delete(db)
+	if deleteErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error deleting shopping list"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "shopping list deleted successfully"})
+}
+
 func GetShoppingLists(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
 	username, err := getUsernameFromCookie(c)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
@@ -65,8 +128,7 @@ func GetShoppingLists(c *gin.Context) {
 }
 
 func GetShoppingList(c *gin.Context) {
-	isLoggedIn := isLoggedIn(c)
-	if !isLoggedIn {
+	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
 	}
@@ -96,11 +158,14 @@ func GetShoppingList(c *gin.Context) {
 
 	username, _ := getUsernameFromCookie(c)
 	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
-	_, createUserListErr := userList.Create(db)
+	userListObj, _ := userList.Read(db)
 
-	if createUserListErr != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating UserList entry"})
-		return
+	if userListObj == nil {
+		_, createUserListErr := userList.Create(db)
+		if createUserListErr != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating UserList entry"})
+			return
+		}
 	}
 
 	c.IndentedJSON(http.StatusOK, items)
@@ -191,17 +256,6 @@ func Login(c *gin.Context) {
 	cookie := base64.StdEncoding.EncodeToString([]byte(user.Username))
 	c.SetCookie("session", cookie, 0, "/", "localhost", false, false)
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "user logged in successfully"})
-}
-
-func LoginPage(c *gin.Context) {
-	cookie, err := c.Cookie("session")
-
-	if err != nil {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "cookie not found"})
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, gin.H{"msg": cookie})
 }
 
 func getUsernameFromCookie(c *gin.Context) (string, error) {

@@ -42,7 +42,7 @@ func (r *SQLiteRepository) Seed() error {
 		&sl1,
 		&sl2,
 		&Item{Id: 1, Name: "Bread", Done: false, List: sl1},
-		&Item{Id: 2, Name: "Cheese", Done: true, List: sl1},
+		&Item{Id: 2, Name: "Cheese", Done: true, List: sl2},
 	}
 
 	for _, v := range seedItems {

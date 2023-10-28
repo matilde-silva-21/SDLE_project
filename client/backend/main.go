@@ -39,11 +39,10 @@ func main() {
 		return
 	}
 	
-	//router.GET("/lists/:url/items", api.GetAllItems)
-	//router.GET("/items/:id", api.GetItem)
 	router.POST("/login", api.Login)
-	//router.GET("/login", api.LoginPage)
 	router.GET("/lists", api.GetShoppingLists)
+	router.POST("/lists/create", api.CreateShoppingList)
+	router.POST("/lists/remove", api.RemoveShoppingList)
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)

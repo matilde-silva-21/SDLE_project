@@ -10,9 +10,9 @@ type Model interface {
 }
 
 type ShoppingList struct {
-	Id 		int64 	`json:"id"`
-	Name 	string 	`json:"name"`
-	Url 	string 	`json:"url" uri:"url"`
+	Id   int64  `json:"id"`
+	Name string `json:"name" form:"listName"`
+	Url  string `json:"url" uri:"url" form:"listUrl"`
 }
 
 type User struct {
@@ -20,14 +20,14 @@ type User struct {
 }
 
 type Item struct {
-	Id   int64  `json:"id" uri:"id"`
-	Name string `json:"name" form:"itemName"`
-	Done bool   `json:"done" form:"itemDone"`
+	Id   int64        `json:"id" uri:"id"`
+	Name string       `json:"name" form:"itemName"`
+	Done bool         `json:"done" form:"itemDone"`
 	List ShoppingList `json:"list"`
 }
 
 type UserList struct {
-	ListID int64 `json:"listID"`
+	ListID int64  `json:"listID"`
 	UserID string `json:"userID"`
 }
 
@@ -73,7 +73,7 @@ func (item *Item) Delete(r *SQLiteRepository) error {
 
 func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 	updatedItem := updated.(*Item)
-	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.List.Id &item.Id)
+	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.List.Id&item.Id)
 
 	if err != nil {
 		return err
@@ -214,7 +214,6 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 	return userLists, nil
 }
 
-
 // SHOPPING LIST MODEL METHODS
 
 func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
@@ -228,13 +227,14 @@ func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO ShoppingList(Id, Name, Url) VALUES (?, ?, ?)", &list.Id, &list.Name, &list.Url)
+	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url) VALUES (?, ?)", &list.Name, &list.Url)
 
 	if err != nil {
 		return nil, err
 	}
+	newList, _ := list.Read(r)
 
-	return list, nil
+	return newList, nil
 }
 
 func (list *ShoppingList) Delete(r *SQLiteRepository) error {
@@ -312,7 +312,12 @@ func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, err
 
 func (userList *UserList) CreateTable(r *SQLiteRepository) error {
 	r.db.Exec("DROP TABLE IF EXISTS UserList")
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS UserList (ListId INTEGER REFERENCES ShoppingList, UserId INTEGER REFERENCES User, PRIMARY KEY(ListId, UserId))")
+	_, err := r.db.Exec(`
+	CREATE TABLE IF NOT EXISTS UserList (
+		ListId INTEGER REFERENCES ShoppingList ON DELETE CASCADE ON UPDATE CASCADE,
+		UserId INTEGER REFERENCES User ON DELETE CASCADE ON UPDATE CASCADE, 
+		PRIMARY KEY(ListId, UserId)
+	)`)
 
 	if err != nil {
 		return err
@@ -345,7 +350,7 @@ func (userList *UserList) Update(r *SQLiteRepository, updated Model) error {
 }
 
 func (userList *UserList) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM UserList WHERE ListId = (?) AND UserId = (?)",  userList.ListID, userList.ListID)
+	res := r.db.QueryRow("SELECT * FROM UserList WHERE ListId = (?) AND UserId = (?)", &userList.ListID, &userList.UserID)
 
 	var updated UserList
 	if err := res.Scan(&updated.ListID, &updated.UserID); err != nil {
