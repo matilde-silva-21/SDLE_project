@@ -1,9 +1,5 @@
 package database
 
-import (
-	"fmt"
-)
-
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
 	Create(r *SQLiteRepository) (Model, error)
@@ -93,14 +89,12 @@ func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 }
 
 func (item *Item) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM Item WHERE Id = (?)", &item.Id)
+	res := r.db.QueryRow("SELECT * FROM Item WHERE Id = (?) OR Name = (?)", &item.Id, &item.Name)
 
 	var updated Item
-	if err := res.Scan(&updated.Id, &updated.Name, &updated.Done); err != nil {
+	if err := res.Scan(&updated.Id, &updated.Name, &updated.Done, &updated.List.Id); err != nil {
 		return nil, err
 	}
-
-	fmt.Println(updated)
 
 	return &updated, nil
 }
@@ -197,7 +191,7 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 }
 
 func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
-	rows, err := r.db.Query("SELECT ShoppingList.Id FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
+	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
 
 	if err != nil {
 		return nil, err
@@ -210,7 +204,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 	for rows.Next() {
 		var ul ShoppingList
 
-		if scanErr := rows.Scan(&ul.Id); scanErr != nil {
+		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url); scanErr != nil {
 			return nil, scanErr
 		}
 
@@ -304,7 +298,6 @@ func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, err
 	for rows.Next() {
 		var i Item
 		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.List.Id); err != nil {
-			fmt.Print("inner error is " + err.Error())
 			return nil, err
 		}
 		i.List.Name = list.Name

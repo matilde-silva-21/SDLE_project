@@ -46,6 +46,7 @@ func main() {
 	router.GET("/lists", api.GetShoppingLists)
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
+	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
 
 	router.Run("localhost:8080")
 }

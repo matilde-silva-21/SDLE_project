@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
 
@@ -130,7 +129,6 @@ func AddItemToShoppingList(c *gin.Context) {
 
 	bindingErr := c.ShouldBind(&item) 
 	if bindingErr != nil {
-		fmt.Println(err.Error())
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
 		return
 	}
@@ -143,6 +141,28 @@ func AddItemToShoppingList(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "Item added to list successfully"})
+}
+
+func RemoveItemFromShoppingList(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	var item database.Item
+	if err := c.ShouldBind(&item); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
+		return
+	}
+
+	itemModel, readErr := item.Read(db)
+	if readErr != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading item from db"})
+		return
+	}
+
+	itemModel.Delete(db)
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "item deleted successfully"})
 }
 
 func Login(c *gin.Context) {
@@ -169,7 +189,8 @@ func Login(c *gin.Context) {
 	}
 
 	cookie := base64.StdEncoding.EncodeToString([]byte(user.Username))
-	c.SetCookie("session", cookie, 0, "/", "localhost:8080", false, false)
+	c.SetCookie("session", cookie, 0, "/", "localhost", false, false)
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "user logged in successfully"})
 }
 
 func LoginPage(c *gin.Context) {
@@ -186,13 +207,11 @@ func LoginPage(c *gin.Context) {
 func getUsernameFromCookie(c *gin.Context) (string, error) {
 	cookie, cookieErr := c.Cookie("session")
 	if cookieErr != nil {
-		fmt.Println(cookieErr.Error())
 		return "", cookieErr
 	}
 
 	username, decodeErr := base64.StdEncoding.DecodeString(cookie)
 	if decodeErr != nil {
-		fmt.Println(decodeErr.Error())
 		return "", decodeErr
 	}
 
