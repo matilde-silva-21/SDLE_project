@@ -94,6 +94,19 @@ func RemoveShoppingList(c *gin.Context) {
 		return
 	}
 
+	username, cookieErr := getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error getting username from cookie"})
+		return
+	}
+
+	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
+	err := userList.Delete(db)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error deleting userList"})
+		return
+	}
+
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "shopping list deleted successfully"})
 }
 
