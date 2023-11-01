@@ -7,28 +7,38 @@ function App() {
 
   const [actualList, setActualList] = useState(null);
 
+  const [selectedItems, setSelectedItems] = useState([]);
+
   const addNewList = () => {
-    const newlistOfLists = [...listOfLists, { title: `List ${listOfLists.length + 1}`, items: [] }];
+    const newlistOfLists = [
+      ...listOfLists,
+      { title: `List ${listOfLists.length + 1}`, items: [] }
+    ];
     setlistOfLists(newlistOfLists);
   };
 
   const addNewItem = () => {
     if (actualList) {
-      const newItem = `Item 1.${actualList.items.length + 1}`;
+      const newItem = `Item ${actualList.items.length + 1}`;
       const updatedList = { ...actualList, items: [...actualList.items, newItem] };
-      const updatedLists = [...listOfLists];
-      const listIndex = updatedLists.findIndex((list) => list === actualList);
-
-      if (listIndex !== -1) {
-        updatedLists[listIndex] = updatedList;
-        setlistOfLists(updatedLists);
-        setActualList(updatedList);
-      }
+      const updatedLists = listOfLists.map((list) =>
+        list === actualList ? updatedList : list
+      );
+      setlistOfLists(updatedLists);
+      setActualList(updatedList);
     }
   };
 
   const selectList = (list) => {
     setActualList(list);
+  };
+
+  const toggleItemSelection = (index) => {
+    if (selectedItems.includes(index)) {
+      setSelectedItems(selectedItems.filter((i) => i !== index));
+    } else {
+      setSelectedItems([...selectedItems, index]);
+    }
   };
 
   return (
@@ -57,9 +67,14 @@ function App() {
           {actualList && (
             <>
               <h1 className="list-title">{actualList.title}</h1>
-              <ul className="list-of-lists">
+              <div className="horizontal-line"></div>
+              <ul className="list-of-items">
                 {actualList.items.map((item, index) => (
-                  <li key={index}>
+                  <li
+                    key={index}
+                    className={selectedItems.includes(index) ? 'strikethrough' : ''}
+                    onClick={() => toggleItemSelection(index)}
+                  >
                     <input type="checkbox" /> {item}
                   </li>
                 ))}
