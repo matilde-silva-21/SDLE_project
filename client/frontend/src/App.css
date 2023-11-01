@@ -42,24 +42,25 @@
   display: flex;
   align-items: center;
   width: 100%;
-  height: 100vh; /* Adjust the height as needed */
-  justify-content: center; /* Center content horizontally */
-  background-color: #f9f9f9; /* Background color for the whole page */
+  height: 100vh;
+  justify-content: center; 
+  background-color: #f9f9f9;
 }
 
 .content-left,
 .content-right {
   flex: 1;
   padding: 20px;
-  background-color: #f9f9f9; /* Background color for left and right content */
+  background-color: #f9f9f9;
+  margin-top: 20px;
 }
 
 .vertical-line {
-  width: 1px; /* Width of the vertical line */
-  height: 100%; /* Extends the line to the full height of the container */
-  background-color: #ccc; /* Color of the vertical line */
+  width: 1px;
+  height: 100%;
+  background-color: #ccc;
   position: absolute;
-  left: 20%; /* Position the line at 40% of the page width */
+  left: 20%;
 }
 
 .right-text {
@@ -71,6 +72,50 @@
 
 .underline {
   text-decoration: underline;
-  margin-top: 10px; /* Adjust the margin as needed */
-  font-weight: bold; /* Optional: Add bold styling to the underlined text */
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.logo-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  align-items: top;
+  display: flex;
+}
+
+.logo {
+  width: 50px;
+  margin-left: 10px;
+  margin-right: 20px; 
+  margin-bottom: 40px;
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 600;
+  margin-left: 10px;
+  padding: 5px;
+}
+
+.list-title {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.list-of-lists {
+  margin-left: 20px;
+}
+
+.button-list {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
 }
