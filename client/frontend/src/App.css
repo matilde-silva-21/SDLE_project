@@ -40,19 +40,20 @@
 
 .container {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
   height: 100vh;
-  justify-content: center; 
   background-color: #f9f9f9;
 }
 
 .content-left,
 .content-right {
-  flex: 1;
+  flex: 0.15;
   padding: 20px;
   background-color: #f9f9f9;
   margin-top: 20px;
+  padding-right: 50px;
 }
 
 .vertical-line {
@@ -91,6 +92,16 @@
   margin-bottom: 40px;
 }
 
+.list-title {
+  position: absolute;
+  top: 20px;
+  left: 350px;
+  margin-left: 10px;
+  padding: 5px;
+  font-size: 30px;
+  font-weight: 600;
+}
+
 .title {
   font-size: 30px;
   font-weight: 600;
@@ -98,7 +109,7 @@
   padding: 5px;
 }
 
-.list-title {
+.lists-title {
   font-weight: 600;
   font-size: 18px;
 }
@@ -111,6 +122,19 @@
   position: absolute;
   bottom: 20px;
   left: 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.button-item {
+  position: absolute;
+  top: 100px;
+  left: 400px;
   background-color: #007bff;
   color: #fff;
   border: none;
