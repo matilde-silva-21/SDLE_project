@@ -38,7 +38,7 @@ function App() {
           <img src={logoImage} alt="Logo image" className="logo" />
           <h1 className="title">List Llama</h1>
         </div>
-        <h2 className="lists-title">Yours Lists</h2>
+        <h2 className="lists-title">Your Lists</h2>
         <div className="list-of-lists">
           {listOfLists.map((list, index) => (
             <div key={index}>
