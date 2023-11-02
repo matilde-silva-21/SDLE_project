@@ -1,7 +1,6 @@
 package addWinSet
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -12,7 +11,7 @@ type setElem struct {
     tag  string
 }
 
-func createSet() map[setElem]void{
+func CreateSet() map[setElem]void{
 
 	set := make(map[setElem]void)
 
@@ -20,7 +19,7 @@ func createSet() map[setElem]void{
 }
 
 /** Altera o objeto passado como argumento (valor passado por referência). Retorna o pair (Element, UniqueTag)*/
-func add(element string, elements *map[setElem]void, tombstones *map[setElem]void) setElem {
+func Add(element string, elements *map[setElem]void, tombstones *map[setElem]void) setElem {
 
 	var dummy void
 	
@@ -38,7 +37,7 @@ func add(element string, elements *map[setElem]void, tombstones *map[setElem]voi
 	return newVar
 }
 
-func remove(element string, elements *map[setElem]void, tombstones *map[setElem]void) bool{
+func Remove(element string, elements *map[setElem]void, tombstones *map[setElem]void) bool{
 
 	var dummy void
 	var action bool = false
@@ -61,7 +60,7 @@ func remove(element string, elements *map[setElem]void, tombstones *map[setElem]
 	return action
 }
 
-func contains(element string, elements map[setElem]void)bool{
+func Contains(element string, elements map[setElem]void)bool{
 
 	for item := range elements{
 		if item.element == element{
@@ -73,23 +72,3 @@ func contains(element string, elements map[setElem]void)bool{
 }
 
 
-func main() {
-	
-	mySet := createSet()
-	myTombstone := createSet()
-
-	fmt.Println(mySet)
-
-	add("apple", &mySet, &myTombstone)
-	add("pear", &mySet, &myTombstone)
-
-
-	fmt.Println("\nOp1", mySet, myTombstone)
-	fmt.Println(contains("apple", mySet))
-	
-	remove("apple", &mySet, &myTombstone)
-	
-	fmt.Println("\nOp2", mySet, myTombstone)
-	fmt.Println(contains("apple", mySet))
-
-}
