@@ -1,32 +1,31 @@
 package addWinSet
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 )
 
 type void struct{}
 
-type setElem struct {
+type SetElem struct {
     element string
     tag  string
 }
 
-func createSet() map[setElem]void{
+func CreateSet() map[SetElem]void{
 
-	set := make(map[setElem]void)
+	set := make(map[SetElem]void)
 
 	return set
 }
 
 /** Altera o objeto passado como argumento (valor passado por referência). Retorna o pair (Element, UniqueTag)*/
-func add(element string, elements *map[setElem]void, tombstones *map[setElem]void) setElem {
+func Add(element string, elements *map[SetElem]void, tombstones *map[SetElem]void) SetElem {
 
 	var dummy void
 	
 	// Prepare
 	u := uuid.New()
-	var newVar setElem = setElem{element: element, tag: u.String()}
+	var newVar SetElem = SetElem{element: element, tag: u.String()}
 
 	// Effect
 	(*elements)[newVar] = dummy
@@ -38,11 +37,11 @@ func add(element string, elements *map[setElem]void, tombstones *map[setElem]voi
 	return newVar
 }
 
-func remove(element string, elements *map[setElem]void, tombstones *map[setElem]void) bool{
+func Remove(element string, elements *map[SetElem]void, tombstones *map[SetElem]void) bool{
 
 	var dummy void
 	var action bool = false
-	var obituaries []setElem
+	var obituaries []SetElem
 
 	// Prepare
 	for item := range *elements{
@@ -61,7 +60,7 @@ func remove(element string, elements *map[setElem]void, tombstones *map[setElem]
 	return action
 }
 
-func contains(element string, elements map[setElem]void)bool{
+func Contains(element string, elements map[SetElem]void)bool{
 
 	for item := range elements{
 		if item.element == element{
@@ -70,26 +69,4 @@ func contains(element string, elements map[setElem]void)bool{
 	}
 
 	return false
-}
-
-
-func main() {
-	
-	mySet := createSet()
-	myTombstone := createSet()
-
-	fmt.Println(mySet)
-
-	add("apple", &mySet, &myTombstone)
-	add("pear", &mySet, &myTombstone)
-
-
-	fmt.Println("\nOp1", mySet, myTombstone)
-	fmt.Println(contains("apple", mySet))
-	
-	remove("apple", &mySet, &myTombstone)
-	
-	fmt.Println("\nOp2", mySet, myTombstone)
-	fmt.Println(contains("apple", mySet))
-
 }
