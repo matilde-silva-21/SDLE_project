@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import logoImage from './logo192.png';
 import './App.css';
 
@@ -40,6 +40,30 @@ function App() {
       setSelectedItems([...selectedItems, index]);
     }
   };
+
+  useEffect(() => {
+    getLists()
+  }, [])
+
+  const getLists = async () => {
+    const login = await fetch("http://localhost:8080/login", {
+      method: 'POST',
+      body: JSON.stringify({'username': 'user1'}),
+      mode: 'cors',
+      credentials: "include",
+      headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    }})
+
+    if (login.ok) {
+      const lists = await (await fetch("http://localhost:8080/lists", {method: "GET", mode: "cors", credentials: "include"})).json()
+      console.log("lists are" + lists)
+      return lists
+    }
+
+    return []
+  }
 
   return (
     <div className="container">

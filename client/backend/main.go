@@ -8,6 +8,7 @@ import (
 	"sdle/m/v2/database"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -38,6 +39,14 @@ func main() {
 		fmt.Print("Database not initialized in API")
 		return
 	}
+
+	router.Use(cors.New(cors.Config{
+		AllowCredentials: true,
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{"POST", "GET"},
+		ExposeHeaders: []string{"Access-Control-Allow-Headers"},
+		AllowHeaders: []string{"Content-Type, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin"},
+	}))
 	
 	router.POST("/login", api.Login)
 	router.GET("/lists", api.GetShoppingLists)
