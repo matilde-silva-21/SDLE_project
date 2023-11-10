@@ -106,11 +106,12 @@
   font-weight: 600;
   margin-left: 10px;
   padding: 5px;
+  font-size: 35px;
 }
 
 .lists-title {
   font-weight: 600;
-  font-size: 18px;
+  font-size: 25px;
 }
 
 .list-of-lists {

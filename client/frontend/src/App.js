@@ -49,13 +49,17 @@ function App() {
           <h1 className="title">List Llama</h1>
         </div>
         <h2 className="lists-title">Your Lists</h2>
-        <div className="list-of-lists">
-          {listOfLists.map((list, index) => (
-            <div key={index}>
-              <button onClick={() => selectList(list)}>{list.title}</button>
-            </div>
-          ))}
-        </div>
+        {listOfLists.length > 0 ? (
+          <div className="list-of-lists">
+            {listOfLists.map((list, index) => (
+              <div key={index}>
+                <button onClick={() => selectList(list)}>{list.title}</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>You don't have any lists yet, create one below!</p>
+        )}
         <div>
           <button className="button-list" onClick={addNewList}>+ Add List</button>
         </div>
