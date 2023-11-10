@@ -58,7 +58,7 @@ function App() {
             ))}
           </div>
         ) : (
-          <p>You don't have any lists yet, create one below!</p>
+          <p className="empty-message">You don't have any lists yet, create one below!</p>
         )}
         <div>
           <button className="button-list" onClick={addNewList}>+ Add List</button>
