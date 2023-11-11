@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sdle/b/addWinSet"
+	"sdle/b/CRDT/addWinSet"
+	"sdle/b/CRDT/lexCounter"
 )
 
 func SetExample(){
@@ -41,8 +42,25 @@ func SetExample(){
 
 }
 
+func LexExample(){
+	x := lexCounter.Create[string, int]("a")
+	y := lexCounter.Create[string, int]("b")
+
+	x.Inc(4)
+	x.Dec(1)
+
+	y.Inc(2)
+
+	fmt.Println(x.GetValue())
+	fmt.Println(y.GetValue())
+
+	x.Join(y)
+
+	lexCounter.Print(x, y)
+}
 
 func main() {
 	fmt.Println("Hello from server")
 	SetExample()
+	LexExample()
 }

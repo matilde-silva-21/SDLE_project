@@ -98,20 +98,3 @@ func Print[K Ordered, V Number](arguments ...LexCounter[K, V]) {
 		fmt.Print(")\n\n")
 	}
 }
-
-func main() {
-	x := Create[string, int]("a")
-	y := Create[string, int]("b")
-
-	x.Inc(4)
-	x.Dec(1)
-
-	y.Inc(2)
-
-	fmt.Println(x.GetValue())
-	fmt.Println(y.GetValue())
-
-	x.Join(y)
-
-	Print(x, y)
-}
