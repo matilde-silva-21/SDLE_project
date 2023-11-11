@@ -1,4 +1,4 @@
-module sdle/b
+module sdle/server
 
 go 1.21
 

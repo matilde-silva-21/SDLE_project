@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sdle/b/CRDT/addWinSet"
-	"sdle/b/CRDT/lexCounter"
+	"sdle/server/CRDT/addWinSet"
+	"sdle/server/CRDT/lexCounter"
 )
 
 func SetExample(){
@@ -61,6 +61,6 @@ func LexExample(){
 
 func main() {
 	fmt.Println("Hello from server")
-	SetExample()
+	//SetExample()
 	LexExample()
 }

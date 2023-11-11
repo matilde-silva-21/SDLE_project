@@ -30,19 +30,19 @@ func Create[K Ordered, V Number](id K) LexCounter[K, V] {
 	return lc
 }
 
-func (lexcounter *LexCounter[K, V]) Inc(toSum V) {
-	m := &lexcounter.m
+func (lexcounter LexCounter[K, V]) Inc(toSum V) {
+	m := lexcounter.m
 	id := lexcounter.id
-	(*m)[id] = Pair[V]{first: (*m)[id].first + 1, second: (*m)[id].second + toSum}
+	m[id] = Pair[V]{first: m[id].first + 1, second: m[id].second + toSum}
 }
 
-func (lexcounter *LexCounter[K, V]) Dec(toDec V) {
-	m := &lexcounter.m
+func (lexcounter LexCounter[K, V]) Dec(toDec V) {
+	m := lexcounter.m
 	id := lexcounter.id
-	if (*m)[id].second <= toDec {
-		(*m)[id] = Pair[V]{first: (*m)[id].first + 1, second: 0}
+	if m[id].second <= toDec {
+		m[id] = Pair[V]{first: m[id].first + 1, second: 0}
 	} else {
-		(*m)[id] = Pair[V]{first: (*m)[id].first + 1, second: (*m)[id].second - toDec}
+		m[id] = Pair[V]{first: m[id].first + 1, second: m[id].second - toDec}
 	}
 }
 
@@ -76,7 +76,7 @@ func Lexjoin[V Number](r, l Pair[V]) Pair[V] {
 	return result
 }
 
-func (lexcounter *LexCounter[K, V]) Join(lexcounter1 LexCounter[K, V]) {
+func (lexcounter LexCounter[K, V]) Join(lexcounter1 LexCounter[K, V]) {
 	m1 := lexcounter1.m
 	
 	for key, value := range m1 {
