@@ -1,9 +1,5 @@
 package database
 
-import (
-	"fmt"
-)
-
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
 	Create(r *SQLiteRepository) (Model, error)
@@ -14,33 +10,32 @@ type Model interface {
 }
 
 type ShoppingList struct {
-	Id int64 `json:"id"`
+	Id   int64  `json:"id"`
+	Name string `json:"name" form:"listName"`
+	Url  string `json:"url" uri:"url" form:"listUrl"`
 }
 
 type User struct {
-	Username string `json:"username"`
+	Username string `json:"username" form:"username"`
 }
 
 type Item struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name"`
-	Done bool   `json:"done"`
+	Id   int64        `json:"id" uri:"id"`
+	Name string       `json:"name" form:"itemName"`
+	Done bool         `json:"done" form:"itemDone"`
+	List ShoppingList `json:"list"`
 }
 
 type UserList struct {
-	ListID int64 `json:"listID"`
-	UserID int64 `json:"userID"`
-}
-
-type ListItem struct {
-	ListID int64 `json:"listID"`
-	ItemID int64 `json:"itemID"`
+	ListID int64  `json:"listID"`
+	UserID string `json:"userID"`
 }
 
 // ITEM MODELS METHODS
 
 func (item *Item) CreateTable(r *SQLiteRepository) error {
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS Item (Id INTEGER PRIMARY KEY, Name TEXT, Done INTEGER)")
+	r.db.Exec("DROP TABLE IF EXISTS Item")
+	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS Item (Id INTEGER PRIMARY KEY, Name TEXT, Done INTEGER, List TEXT REFERENCES ShoppingList)")
 
 	if err != nil {
 		return err
@@ -49,7 +44,7 @@ func (item *Item) CreateTable(r *SQLiteRepository) error {
 }
 
 func (item *Item) Create(r *SQLiteRepository) (Model, error) {
-	res, err := r.db.Exec("INSERT INTO Item(Name, Done) VALUES (?, ?)", &item.Name, &item.Done)
+	res, err := r.db.Exec("INSERT INTO Item(Name, Done, List) VALUES (?, ?, ?)", &item.Name, &item.Done, &item.List.Id)
 
 	if err != nil {
 		return nil, err
@@ -78,7 +73,7 @@ func (item *Item) Delete(r *SQLiteRepository) error {
 
 func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 	updatedItem := updated.(*Item)
-	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, &item.Id)
+	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.List.Id&item.Id)
 
 	if err != nil {
 		return err
@@ -94,14 +89,12 @@ func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 }
 
 func (item *Item) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM Item WHERE Id = (?)", &item.Id)
+	res := r.db.QueryRow("SELECT * FROM Item WHERE Id = (?) OR Name = (?)", &item.Id, &item.Name)
 
 	var updated Item
-	if err := res.Scan(&updated.Id, &updated.Name, &updated.Done); err != nil {
+	if err := res.Scan(&updated.Id, &updated.Name, &updated.Done, &updated.List.Id); err != nil {
 		return nil, err
 	}
-
-	fmt.Println(updated)
 
 	return &updated, nil
 }
@@ -131,6 +124,7 @@ func (item *Item) ReadAll(r *SQLiteRepository) ([]Model, error) {
 // USER MODEL METHODS
 
 func (user *User) CreateTable(r *SQLiteRepository) error {
+	r.db.Exec("DROP TABLE IF EXISTS User")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS User (Username TEXT PRIMARY KEY)")
 
 	if err != nil {
@@ -196,10 +190,35 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 	return users, nil
 }
 
+func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
+	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var userLists []ShoppingList
+
+	for rows.Next() {
+		var ul ShoppingList
+
+		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url); scanErr != nil {
+			return nil, scanErr
+		}
+
+		userLists = append(userLists, ul)
+	}
+
+	return userLists, nil
+}
+
 // SHOPPING LIST MODEL METHODS
 
 func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY)")
+	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
+	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE)")
 
 	if err != nil {
 		return err
@@ -208,13 +227,14 @@ func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO ShoppingList(Id) VALUES (?)", &list.Id)
+	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url) VALUES (?, ?)", &list.Name, &list.Url)
 
 	if err != nil {
 		return nil, err
 	}
+	newList, _ := list.Read(r)
 
-	return list, nil
+	return newList, nil
 }
 
 func (list *ShoppingList) Delete(r *SQLiteRepository) error {
@@ -232,10 +252,10 @@ func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
 }
 
 func (list *ShoppingList) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM ShoppingList WHERE Id = (?)", list.Id)
+	res := r.db.QueryRow("SELECT * FROM ShoppingList WHERE Url = ?", &list.Url)
 
 	var updated ShoppingList
-	if err := res.Scan(&updated.Id); err != nil {
+	if err := res.Scan(&updated.Id, &updated.Name, &updated.Url); err != nil {
 		return nil, err
 	}
 
@@ -264,10 +284,40 @@ func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 	return lists, nil
 }
 
+func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, error) {
+	rows, err := r.db.Query("SELECT * FROM Item WHERE List = (?)", &list.Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var items []Item
+
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.List.Id); err != nil {
+			return nil, err
+		}
+		i.List.Name = list.Name
+		i.List.Url = list.Url
+		items = append(items, i)
+	}
+
+	return items, nil
+}
+
 // USER LIST MODEL METHODS
 
 func (userList *UserList) CreateTable(r *SQLiteRepository) error {
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS UserList (ListId INTEGER REFERENCES ShoppingList, UserId INTEGER REFERENCES User, PRIMARY KEY(ListId, UserId))")
+	r.db.Exec("DROP TABLE IF EXISTS UserList")
+	_, err := r.db.Exec(`
+	CREATE TABLE IF NOT EXISTS UserList (
+		ListId INTEGER REFERENCES ShoppingList ON DELETE CASCADE ON UPDATE CASCADE,
+		UserId INTEGER REFERENCES User ON DELETE CASCADE ON UPDATE CASCADE, 
+		PRIMARY KEY(ListId, UserId)
+	)`)
 
 	if err != nil {
 		return err
@@ -276,7 +326,7 @@ func (userList *UserList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (userList *UserList) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO UserList(ListId, UserId) VALUES (?)", &userList.ListID, &userList.UserID)
+	_, err := r.db.Exec("INSERT INTO UserList(ListId, UserId) VALUES (?, ?)", &userList.ListID, &userList.UserID)
 
 	if err != nil {
 		return nil, err
@@ -300,7 +350,7 @@ func (userList *UserList) Update(r *SQLiteRepository, updated Model) error {
 }
 
 func (userList *UserList) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM UserList WHERE ListId = (?) AND UserId = (?)",  userList.ListID, userList.ListID)
+	res := r.db.QueryRow("SELECT * FROM UserList WHERE ListId = (?) AND UserId = (?)", &userList.ListID, &userList.UserID)
 
 	var updated UserList
 	if err := res.Scan(&updated.ListID, &updated.UserID); err != nil {
@@ -327,74 +377,6 @@ func (userList *UserList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 			return nil, err
 		}
 		lists = append(lists, &ul)
-	}
-
-	return lists, nil
-}
-
-// LIST ITEM MODEL METHODS
-
-func (listItem *ListItem) CreateTable(r *SQLiteRepository) error {
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ListItem (ListId INTEGER REFERENCES ShoppingList, ItemId INTEGER REFERENCES Item, PRIMARY KEY(ListId, ItemId))")
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (listItem *ListItem) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO ListItem(ListId, ItemId) VALUES (?)", &listItem.ListID, &listItem.ItemID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return listItem, nil
-}
-
-func (listItem *ListItem) Delete(r *SQLiteRepository) error {
-	_, err := r.db.Exec("DELETE FROM ListItem WHERE ListId = (?) AND ItemId = (?)", &listItem.ListID, &listItem.ItemID)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (listItem *ListItem) Update(r *SQLiteRepository, updated Model) error {
-	return nil
-}
-
-func (listItem *ListItem) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM ListItem WHERE ListId = (?) AND ItemId = (?)", listItem.ListID, listItem.ItemID)
-
-	var updated ListItem
-	if err := res.Scan(&updated.ListID, &updated.ItemID); err != nil {
-		return nil, err
-	}
-
-	return &updated, nil
-}
-
-func (listItem *ListItem) ReadAll(r *SQLiteRepository) ([]Model, error) {
-	rows, err := r.db.Query("SELECT * FROM ListItem")
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	var lists []Model
-
-	for rows.Next() {
-		var li ListItem
-		if err := rows.Scan(&li.ListID, &li.ItemID); err != nil {
-			return nil, err
-		}
-		lists = append(lists, &li)
 	}
 
 	return lists, nil
