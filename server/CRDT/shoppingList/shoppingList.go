@@ -3,6 +3,7 @@ package shoppingList
 import (
 	"fmt"
 	LexCounter "sdle/server/CRDT/lexCounter"
+	StringStandardizer "sdle/server/utils/stringStandardizer"
 )
 
 
@@ -23,6 +24,8 @@ func Create() ShoppingList {
 
 func (list ShoppingList) AddItem(item string, quantity int) bool {
 	
+	item = StringStandardizer.StandardizeString(item)
+
 	_, keyExists := list.list[item]
 
 	if(keyExists) {
