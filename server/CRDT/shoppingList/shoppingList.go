@@ -1,4 +1,4 @@
-package main
+package shoppingList
 
 import (
 	"fmt"
@@ -70,13 +70,9 @@ func (list ShoppingList) JSON() string{
 			comma = true
 		}
 
-		if (list.state[key].GetValue() >= 1){
-			bought = true
-		} else {
-			bought = false
-		}
+		bought = list.CheckIfItemBought(key)
 
-		result += fmt.Sprintf( "\n{item: %s, quantity: %d, bought: %t}", key, value.GetValue(), bought )
+		result += fmt.Sprintf( "\n{item: \"%s\", quantity: %d, bought: %t}", key, value.GetValue(), bought )
 
 	}
 
@@ -110,10 +106,10 @@ func (list ShoppingList) AlterItemQuantity(item string, newQuantity int) bool {
 	
 	oldQuantity := list.list[item].GetValue()
 	
-	if(oldQuantity >= newQuantity){
+	if (oldQuantity > newQuantity){
 		quantity := oldQuantity - newQuantity
 		list.list[item].Dec(quantity)
-	} else {
+	} else if (oldQuantity < newQuantity) {
 		quantity := newQuantity - oldQuantity
 		list.list[item].Inc(quantity)
 	}
@@ -136,6 +132,88 @@ func (list ShoppingList) DeleteItem(item string) bool{
 	return true
 }
 
+// Return false if item not bought or if item doesnt exist. Return true if item bought
+func (list ShoppingList) CheckIfItemBought(item string) bool{
+	
+	entry, keyExists := list.state[item]
+	
+	if (!keyExists) {
+		return false
+	}
+
+	if (entry.GetValue() >= 1){
+		return true
+	} else {
+		return false;
+	}
+}
+
+// Returns state value if item exists. Return -1 if item does not exist. 
+func (list ShoppingList) GetStateValue(item string) int{
+	
+	entry, keyExists := list.state[item]
+	
+	if (!keyExists) {
+		return -1
+	}
+
+	return entry.GetValue()
+}
+
+// Return -1 if item doesn't exist. Returns item quantity if item exists. 
+func (list ShoppingList) CheckItemQuantity(item string) int {
+	
+	entry, keyExists := list.list[item]
+	
+	if (!keyExists) {
+		return -1
+	}
+
+	return entry.GetValue()
+}
+
+
+func (list1 ShoppingList) JoinShoppingListHelper(list2 ShoppingList, item2 string) (int, int) {
+	
+	decreaseQuantityValue := 0
+	decreaseStateValue := 0
+
+	bought1 := list1.CheckIfItemBought(item2)
+	bought2 := list2.CheckIfItemBought(item2)
+
+	state1 := list1.GetStateValue(item2)
+	state2 := list2.GetStateValue(item2)
+
+	quantity1 := list1.CheckItemQuantity(item2)
+	quantity2 := list2.CheckItemQuantity(item2)
+
+	if (bought1 && !bought2) {
+
+		if (quantity1 > quantity2) {
+			decreaseQuantityValue = quantity2
+			decreaseStateValue = 0
+		} else if (quantity2 > quantity1) {
+			decreaseQuantityValue = 2*quantity1
+			decreaseStateValue = state1
+		}
+
+
+	} else if (!bought1 && bought2){
+
+		if (quantity1 > quantity2){ 
+			decreaseQuantityValue = 2*quantity2
+			decreaseStateValue = state2
+		} else if (quantity2 > quantity1) {
+			decreaseQuantityValue = quantity1
+			decreaseStateValue = 0
+		}
+
+	}
+
+	return decreaseQuantityValue, decreaseStateValue
+
+}
+
 
 func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
 
@@ -148,44 +226,13 @@ func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
 
 		if (keyExists){
 
-			state1Value := list1.state[item2].GetValue()
-			state2Value := list2.state[item2].GetValue()
-
-			if (state1Value >= 1 && state2Value == 0) {
-
-				// FIXME perceber como fazer as coisas de decrementar os valores e tal
-
-				if (lexCounter2.GetValue() < list1.list[item2].GetValue()){ 
-					decreaseStateValue = 0
-					decreaseQuantityValue = lexCounter2.GetValue()
-
-				} else if (lexCounter2.GetValue() > list1.list[item2].GetValue()) {
-					decreaseStateValue = state1Value
-					decreaseQuantityValue = list1.list[item2].GetValue()
-				}
-
-
-			} else if (state1Value == 0 && state2Value >= 1){
-
-
-				if (lexCounter2.GetValue() < list1.list[item2].GetValue()){ 
-					decreaseStateValue = state2Value
-					decreaseQuantityValue = lexCounter2.GetValue()
-				} else if (lexCounter2.GetValue() > list1.list[item2].GetValue()) {
-					decreaseStateValue = 0
-					decreaseQuantityValue = list1.list[item2].GetValue()
-				}
-
-			}
+			decreaseQuantityValue, decreaseStateValue = list1.JoinShoppingListHelper(list2, item2)
 
 			list1.list[item2].Join(lexCounter2)
 			list1.state[item2].Join(list2.state[item2])
 
-			fmt.Println(list1.list[item2])
 			list1.list[item2].Dec(decreaseQuantityValue)
 			list1.state[item2].Dec(decreaseStateValue)
-			fmt.Println(list1.list[item2])
-
 
 		} else {
 			list1.list[item2] = lexCounter2
@@ -193,38 +240,3 @@ func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
 		}
 	}
 }
-
-
-func main() {
-	
-	shopList1 := Create()
-	shopList2 := Create()
-
-	shopList1.AddItem("apple", 3)
-	shopList1.AddItem("rice", 5)
-	
-	shopList2.AddItem("pear", 2)
-	shopList2.AddItem("rice", 3)
-	shopList2.BuyItem("rice")
-
-	fmt.Println("\n\n")
-	fmt.Println(shopList1.JSON())
-	fmt.Println("\n\n")
-
-	//fmt.Println(shopList1)
-
-	shopList1.JoinShoppingList(shopList2)
-
-	//fmt.Println(shopList1.JSON())
-	fmt.Println(shopList1.JSON())
-
-}
-
-
-/*
-
- 	if (item2.bought && !item1.bought)
-		join as normal but decrease the already bought quantity
-	if (!item2.bought && item1.bought)
-		if item1.quantity >= item2.quantity 
-*/
