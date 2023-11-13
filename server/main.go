@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sdle/server/CRDT/addWinSet"
 	"sdle/server/CRDT/lexCounter"
-	"sdle/server/CRDT/shoppingList"
+	shoppingList "sdle/server/CRDT/shoppingList"
 )
 
 func SetExample(){
@@ -62,6 +62,7 @@ func LexExample(){
 
 
 func ShopListExample() {
+	
 	shopList1 := shoppingList.Create()
 	shopList2 := shoppingList.Create()
 
@@ -84,6 +85,12 @@ func ShopListExample() {
 	shopList1.JoinShoppingList(shopList2)
 
 	fmt.Println("\nShop List 1 after merging with Shop List 2")
+	fmt.Println(shopList1.JSON())
+	fmt.Println("\n")
+
+	shopList1.JoinShoppingList(shopList2)
+
+	fmt.Println("\nShop List 1 after merging with Shop List 2 (again)")
 	fmt.Println(shopList1.JSON())
 	fmt.Println("\n")
 

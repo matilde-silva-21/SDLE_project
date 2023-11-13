@@ -9,15 +9,15 @@ import (
 
 type ShoppingList struct {
 	
-	list map[string](LexCounter.LexCounter[string, int])
-	state map[string](LexCounter.LexCounter[string, int])  // If item state == 0, not bought. If item state >= 1, bought
+	list LexCounter.LexCounter[string, int]
+	state LexCounter.LexCounter[string, int]  // If item state == 0, not bought. If item state >= 1, bought
 
 }
 
 func Create() ShoppingList {
 
-	list := make(map[string] LexCounter.LexCounter[string, int])
-	state := make(map[string] LexCounter.LexCounter[string, int])
+	list := LexCounter.Create[string, int]("list")
+	state := LexCounter.Create[string, int]("state")
 
 	return ShoppingList{list: list, state: state}
 }
@@ -26,21 +26,113 @@ func (list ShoppingList) AddItem(item string, quantity int) bool {
 	
 	item = StringStandardizer.StandardizeString(item)
 
-	_, keyExists := list.list[item]
+	_, keyExists := list.list.Map[item]
 
 	if(keyExists) {
 		return false
 	}
 
-	itemObject := LexCounter.Create[string, int](item)
-	itemState := LexCounter.Create[string, int](item)
+	itemObj := LexCounter.Create[string, int](item)
 
-	itemObject.Inc(quantity)
+	itemObj.Inc(quantity)
 
-	list.list[item] = itemObject
-	list.state[item] = itemState
+	list.list.Join(itemObj)
 
 	return true
+}
+
+
+
+// Returns false if item doesn't exist or if item already bought. Returns true if alteration was succesful
+func (list ShoppingList) BuyItem(item string) bool {
+	
+	_, keyExists1 := list.list.Map[item]
+	_, keyExists2 := list.state.Map[item]
+	
+	if(!keyExists1 || keyExists2) {
+		return false
+	}
+	
+	itemObj := LexCounter.Create[string, int](item)
+
+	itemObj.Inc(1)
+
+	list.state.Join(itemObj)
+	
+	return true
+}
+
+// Returns false if item is already bought or item doesn't exist. Returns true if alteration was succesful
+func (list ShoppingList) AlterItemQuantity(item string, newQuantity int) bool {
+	
+	_, keyExists := list.list.Map[item]
+	
+	if ((list.state.Map[item].Second >= 1) || !keyExists){
+		return false
+	}
+	
+	oldQuantity := list.list.Map[item].Second
+	
+	if (oldQuantity > newQuantity){
+		quantity := oldQuantity - newQuantity
+
+		itemObj := LexCounter.Create[string, int](item)
+
+		itemObj.Dec(quantity)
+
+		list.list.Join(itemObj)
+
+	} else if (oldQuantity < newQuantity) {
+		quantity := newQuantity - oldQuantity
+		
+		itemObj := LexCounter.Create[string, int](item)
+
+		itemObj.Inc(quantity)
+
+		list.list.Join(itemObj)
+	}
+	
+	return true
+}
+
+
+// Returns false if item doesn't exist. Returns true if deletion was succesful
+func (list ShoppingList) DeleteItem(item string) bool{
+	
+	_, keyExists := list.list.Map[item]
+	
+	if (!keyExists){
+		return false
+	}
+	
+	delete(list.list.Map, item)
+	delete(list.state.Map, item)
+	
+	return true
+}
+
+// Return false if item not bought or if item doesnt exist. Return true if item bought
+func (list ShoppingList) CheckIfItemBought(item string) bool{
+	
+	val, keyExists := list.state.Map[item]
+	
+	if(keyExists){
+		return (val.Second != 0)	
+	}
+	return false
+}
+
+
+// Return -1 if item doesn't exist. Returns item quantity if item exists (doesnt matter if bought or not). 
+func (list ShoppingList) CheckItemQuantity(item string) int {
+	
+	entry, keyExists := list.list.Map[item]
+	
+	if (!keyExists) {
+		return -1
+	}
+	
+	return entry.Second
 }
 
 
@@ -59,13 +151,14 @@ func (list ShoppingList) AddItem(item string, quantity int) bool {
 }
 
 */
+
 func (list ShoppingList) JSON() string{
 
 	var bought, comma = false, false
 
 	result := "{"
 
-	for key, value := range list.list {
+	for key, _ := range list.list.Map {
 		
 		if (comma) { 
 			result += ","
@@ -74,105 +167,15 @@ func (list ShoppingList) JSON() string{
 		}
 
 		bought = list.CheckIfItemBought(key)
+		quantity := list.CheckItemQuantity(key)
 
-		result += fmt.Sprintf( "\n{item: \"%s\", quantity: %d, bought: %t}", key, value.GetValue(), bought )
+		result += fmt.Sprintf( "{item: \"%s\", quantity: %d, bought: %t}", key, quantity, bought)
 
 	}
 
-	result += "\n}"
+	result += "}"
 
 	return result
-}
-
-// Returns false if item doesn't exist or if item already bought. Returns true if alteration was succesful
-func (list ShoppingList) BuyItem(item string) bool {
-	
-	_, keyExists := list.list[item]
-
-	if(!keyExists || (list.state[item].GetValue() >= 1)) {
-		return false
-	}
-
-	list.state[item].Inc(1)
-
-	return true
-}
-
-// Returns false if item is already bought or item doesn't exist. Returns true if alteration was succesful
-func (list ShoppingList) AlterItemQuantity(item string, newQuantity int) bool {
-
-	_, keyExists := list.list[item]
-
-	if ((list.state[item].GetValue() >= 1) || !keyExists){
-		return false
-	}
-	
-	oldQuantity := list.list[item].GetValue()
-	
-	if (oldQuantity > newQuantity){
-		quantity := oldQuantity - newQuantity
-		list.list[item].Dec(quantity)
-	} else if (oldQuantity < newQuantity) {
-		quantity := newQuantity - oldQuantity
-		list.list[item].Inc(quantity)
-	}
-
-	return true
-}
-
-// Returns false if item doesn't exist. Returns true if deletion was succesful
-func (list ShoppingList) DeleteItem(item string) bool{
-
-	_, keyExists := list.list[item]
-
-	if (!keyExists){
-		return false
-	}
-
-	delete(list.list, item)
-	delete(list.state, item)
-
-	return true
-}
-
-// Return false if item not bought or if item doesnt exist. Return true if item bought
-func (list ShoppingList) CheckIfItemBought(item string) bool{
-	
-	entry, keyExists := list.state[item]
-	
-	if (!keyExists) {
-		return false
-	}
-
-	if (entry.GetValue() >= 1){
-		return true
-	} else {
-		return false;
-	}
-}
-
-// Returns state value if item exists. Return -1 if item does not exist. 
-func (list ShoppingList) GetStateValue(item string) int{
-	
-	entry, keyExists := list.state[item]
-	
-	if (!keyExists) {
-		return -1
-	}
-
-	return entry.GetValue()
-}
-
-// Return -1 if item doesn't exist. Returns item quantity if item exists. 
-func (list ShoppingList) CheckItemQuantity(item string) int {
-	
-	entry, keyExists := list.list[item]
-	
-	if (!keyExists) {
-		return -1
-	}
-
-	return entry.GetValue()
 }
 
 
@@ -184,8 +187,8 @@ func (list1 ShoppingList) JoinShoppingListHelper(list2 ShoppingList, item2 strin
 	bought1 := list1.CheckIfItemBought(item2)
 	bought2 := list2.CheckIfItemBought(item2)
 
-	state1 := list1.GetStateValue(item2)
-	state2 := list2.GetStateValue(item2)
+	state1 := list1.state.Map[item2].Second
+	state2 := list2.state.Map[item2].Second
 
 	quantity1 := list1.CheckItemQuantity(item2)
 	quantity2 := list2.CheckItemQuantity(item2)
@@ -217,29 +220,49 @@ func (list1 ShoppingList) JoinShoppingListHelper(list2 ShoppingList, item2 strin
 
 }
 
-
 func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
+	
+	/*list1.list.Join(list2.list)
+	list1.state.Join(list2.state)*/
 
-	decreaseQuantityValue := 0
-	decreaseStateValue := 0
+	quantityMap := make(map[string] int)
+	stateMap := make(map[string] int)
 
-	for item2, lexCounter2 := range list2.list {
+	for key, value := range list2.list.Map {
 		
-		_, keyExists := list1.list[item2]
+		pr, keyExists := list1.list.Map[key]
+		if (keyExists && value.First == pr.First){
 
-		if (keyExists){
+			decreaseQuantityValue, decreaseStateValue := list1.JoinShoppingListHelper(list2, key)
 
-			decreaseQuantityValue, decreaseStateValue = list1.JoinShoppingListHelper(list2, item2)
+			quantityMap[key] = decreaseQuantityValue
+			stateMap[key] = decreaseStateValue
 
-			list1.list[item2].Join(lexCounter2)
-			list1.state[item2].Join(list2.state[item2])
-
-			list1.list[item2].Dec(decreaseQuantityValue)
-			list1.state[item2].Dec(decreaseStateValue)
-
-		} else {
-			list1.list[item2] = lexCounter2
-			list1.state[item2] = list2.state[item2]
 		}
 	}
+
+	list1.list.Join(list2.list)
+	list1.state.Join(list2.state)
+
+	for key, value := range quantityMap {
+
+		itemObj := LexCounter.Create[string, int](key)
+		itemObj.Dec(value)
+	
+		pair := list1.list.Map[key]
+		pair.Second = itemObj.Map[key].Second
+		itemObj.Map[key] = pair
+	
+		stateObj := LexCounter.Create[string, int](key)
+		stateObj.Dec(stateMap[key])
+	
+		statePair := list1.state.Map[key]
+		statePair.Second = stateObj.Map[key].Second
+		stateObj.Map[key] = statePair
+	
+		list1.list.Join(itemObj)
+		list1.state.Join(stateObj)
+
+	}
+
 }
