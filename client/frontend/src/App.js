@@ -10,11 +10,15 @@ function App() {
   const [selectedItems, setSelectedItems] = useState([]);
 
   const addNewList = () => {
-    const newlistOfLists = [
-      ...listOfLists,
-      { title: `List ${listOfLists.length + 1}`, items: [] }
-    ];
-    setlistOfLists(newlistOfLists);
+    // if (listOfLists.length < 10) {
+      const newlistOfLists = [
+        ...listOfLists,
+        { title: `List ${listOfLists.length + 1}`, items: [] }
+      ];
+      setlistOfLists(newlistOfLists);
+    // } else {
+      // alert("You can only have 10 lists!");
+    // }
   };
 
   const addNewItem = () => {
@@ -48,28 +52,34 @@ function App() {
           <img src={logoImage} alt="Logo image" className="logo" />
           <h1 className="title">List Llama</h1>
         </div>
-        <h2 className="lists-title">Your Lists</h2>
-        {listOfLists.length > 0 ? (
-          <div className="list-of-lists">
-            {listOfLists.map((list, index) => (
-              <div key={index}>
-                <button onClick={() => selectList(list)}>{list.title}</button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="empty-message">You don't have any lists yet, create one below!</p>
-        )}
-        <div>
-          <button className="button-list" onClick={addNewList}>+ Add List</button>
+        <div className="lists">
+          <h2 className="lists-title">Your Lists</h2>
+          {listOfLists.length > 0 ? (
+            <div className="list-of-lists">
+              {listOfLists.map((list, index) => (
+                <div key={index}>
+                  <button className="list-button" onClick={() => selectList(list)}>
+                    {list.title}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-message">You don't have any lists yet, create one below!</p>
+          )}
+          <button className="button-list" onClick={addNewList}>
+            + Add List
+          </button>
         </div>
       </div>
       <div className="vertical-line"></div>
       <div className="content-right">
         <div className="right-text">
-          {actualList && <button className="button-item" onClick={addNewItem}>+ Add Item</button>}
           {actualList && (
             <>
+              <button className="button-item" onClick={addNewItem}>
+                + Add Item
+              </button>
               <h1 className="list-title">{actualList.title}</h1>
               <div className="horizontal-line"></div>
               <ul className="list-of-items">
