@@ -4,22 +4,36 @@ import (
 	"fmt"
 	LexCounter "sdle/server/CRDT/lexCounter"
 	StringStandardizer "sdle/server/utils/stringStandardizer"
+	"github.com/google/uuid"
 )
 
 
 type ShoppingList struct {
 	
+	url string
+	name string
 	list LexCounter.LexCounter[string, int]
 	state LexCounter.LexCounter[string, int]  // If item state == 0, not bought. If item state >= 1, bought
 
 }
 
-func Create() ShoppingList {
+func Create(listName string) ShoppingList {
 
 	list := LexCounter.Create[string, int]("list")
 	state := LexCounter.Create[string, int]("state")
 
-	return ShoppingList{list: list, state: state}
+	u := uuid.New()
+
+	return ShoppingList{url: u.String(), name: listName, list: list, state: state}
+}
+
+
+func (list ShoppingList) GetURL() string {
+	return list.url
+}
+
+func (list ShoppingList) GetListName() string {
+	return list.name
 }
 
 func (list ShoppingList) AddItem(item string, quantity int) bool {

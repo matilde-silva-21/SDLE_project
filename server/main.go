@@ -63,8 +63,10 @@ func LexExample(){
 
 func ShopListExample() {
 	
-	shopList1 := shoppingList.Create()
-	shopList2 := shoppingList.Create()
+	shopList1 := shoppingList.Create("My List 1")
+	shopList2 := shoppingList.Create("My List 2")
+
+	fmt.Println(shopList1.GetURL())
 
 	shopList1.AddItem("apple", 3)
 	shopList1.AddItem("rice", 5)
