@@ -84,8 +84,34 @@ func CreateConsumerChannel(ch *amqp.Channel, queue *amqp.Queue)  <-chan amqp.Del
 	return msgs
 }
 
+// For example, messages with JSON payload should use application/json
+func PublishMessage(contentType string, body string, ch *amqp.Channel, exchangeName string, topics ...string) {
+	for _, topic := range topics {
+		err := ch.Publish(
+			exchangeName,                   // exchange
+			topic,            // routing key
+			false,                    // mandatory
+			false,                    // immediate
+			amqp.Publishing{
+				ContentType: contentType,
+				Body:        []byte(body),
+			})
+		failOnError(err, "Failed to publish a message")
+	}
+}
+
 // Loops infinitely, waiting for messages. Will keep running indefinitely until the channel is closed.
-func main() {
+func HandleIncomingMessages(messages <-chan amqp.Delivery) {
+
+	log.Printf("[*] Waiting for logs. To exit press CTRL+C")
+	for msg := range messages {
+	   log.Printf("[x] %s", msg.Body)
+	}
+
+}
+
+// Joining the pieces
+func RabbitMQExample() {
 
 	// <------------ Boiler plate ------------>
 	conn, ch := CreateChannel()
@@ -100,14 +126,11 @@ func main() {
 	q := DeclareQueue(ch, "")
 	
 	// <-------------------------------------->
-
-	// Tópicos a ser ouvidos pelo cliente (poderão ser os URLs da shoppingList)
-	BindRoutingKeys(ch, q, exchangeName, "info.server", "topic.second", "topic.third")
-
+	
+	// Tópicos a ser ouvidos pelo orchestrator (todos os URLs)
+	BindRoutingKeys(ch, q, exchangeName, "url.*")
+	
 	messages := CreateConsumerChannel(ch, q)
- 
-	log.Printf(" [*] Waiting for logs. To exit press CTRL+C")
-	for msg := range messages {
-	   log.Printf(" [x] %s", msg.Body)
-	}
+
+	HandleIncomingMessages(messages)
 }
