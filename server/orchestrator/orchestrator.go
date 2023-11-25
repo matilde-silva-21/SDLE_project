@@ -2,24 +2,87 @@ package orchestrator
 
 import (
 	"fmt"
-	"./hash"
+	"net"
+	"log"
+	"server-utils/orchestrator/hash"
+	"server-utils/orchestrator/communication/tcp"
+	"server-utils/orchestrator/communication/rabbitMQ"
 )
 
 func OrchestratorExample() {
 
-	consistentHash := hash.NewCustomConsistentHash(2, hash.Hash)
+	// <------------ RabbitMQ channel ------------>
+	
+	conn, ch := rabbitmq.CreateChannel()
+	
+	defer conn.Close()
+	defer ch.Close()
+	
+	exchangeName := "logs"
+	
+	rabbitmq.DeclareExchange(ch, exchangeName)
+	
+	q := rabbitmq.DeclareQueue(ch, "")
+	
+	rabbitmq.BindRoutingKeys(ch, q, exchangeName, "url.*")
+	
+	messages := rabbitmq.CreateConsumerChannel(ch, q)
+	
+	go rabbitmq.HandleIncomingMessages(messages) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	
+	// <------------------------------------------>
 
-	consistentHash.Add("server 1")
-	consistentHash.Add("server 2")
-	consistentHash.Add("server 3")
-	consistentHash.Add("server 4")
-	consistentHash.Add("server 5")
+
+	// <------------ Create Hashing Ring ------------>
+	
+	hashRing := hash.NewCustomConsistentHash(2, hash.Hash) // MD5 hash
+
+	/*hashRing.Add("server 1")
+	hashRing.Add("server 2")
+	hashRing.Add("server 3")
+	hashRing.Add("server 4")
+	hashRing.Add("server 5")*/
+	
+	fmt.Println(hashRing.GetNodes())
+	fmt.Println(hashRing.GetRing())
+
+	//fmt.Println(hashRing.GetClosestNodes("url123", 3))
+	
+	// <--------------------------------------------->
 
 
-	/*fmt.Println(consistentHash.GetNodes())
-	fmt.Println(consistentHash.GetRing())*/
+	// <------------ Create TCP Listener For Servers To join Hash Ring ------------>
+	
+	address := "localhost:8080" // Orchestrator address
+	
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		return
+	}
 
-	fmt.Println(consistentHash.GetClosestNodes("url123", 3))
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer listener.Close()
 
+    fmt.Println("Server is listening on port 8080")
+
+
+	for {
+        // Accept incoming connections
+        conn, err := listener.AcceptTCP()
+        if err != nil {
+            fmt.Println("Error:", err)
+            continue
+        }
+
+        // Handle client connection.....
+		message := tcp.ReadMessage(conn)
+		log.Printf(message)
+    }
+	
+	// <--------------------------------------------------------------------------->
 
 }

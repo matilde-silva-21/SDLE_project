@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"./orchestrator"
+	"server-utils/orchestrator"
 )
 
 func main() {
 
 	fmt.Println("Hello from server")
-	
+
 	orchestrator.OrchestratorExample();
 }
