@@ -58,14 +58,14 @@ func NewCustomConsistentHash(replicas int, fn Func) *ConsistentHash {
 
 // Add adds the node with the number of h.replicas,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) Add(node any) {
-	h.AddWithReplicas(node, h.replicas)
+func (h *ConsistentHash) Add(node any, address net.IP) {
+	h.AddWithReplicas(node, h.replicas, address)
 }
 
 // AddWithReplicas adds the node with the number of replicas,
 // replicas will be truncated to h.replicas if it's larger than h.replicas,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) AddWithReplicas(node any, replicas int) {
+func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address net.IP) {
 	h.Remove(node)
 
 	if replicas > h.replicas {
@@ -75,7 +75,7 @@ func (h *ConsistentHash) AddWithReplicas(node any, replicas int) {
 	nodeRepr := repr(node)
 	h.lock.Lock()
 	defer h.lock.Unlock()
-	h.addNode(nodeRepr)
+	h.addNode(nodeRepr, address)
 
 	for i := 0; i < replicas; i++ {
 		hash := h.hashFunc([]byte(nodeRepr + strconv.Itoa(i)))
@@ -90,11 +90,11 @@ func (h *ConsistentHash) AddWithReplicas(node any, replicas int) {
 
 // AddWithWeight adds the node with weight, the weight can be 1 to 100, indicates the percent,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) AddWithWeight(node any, weight int) {
+func (h *ConsistentHash) AddWithWeight(node any, weight int, address net.IP) {
 	// don't need to make sure weight not larger than TopWeight,
 	// because AddWithReplicas makes sure replicas cannot be larger than h.replicas
 	replicas := h.replicas * weight / TopWeight
-	h.AddWithReplicas(node, replicas)
+	h.AddWithReplicas(node, replicas, address)
 }
 
 // Get returns the corresponding node from h base on the given v.
@@ -215,8 +215,8 @@ func (h *ConsistentHash) removeRingNode(hash uint64, nodeRepr string) {
 	}
 }
 
-func (h *ConsistentHash) addNode(nodeRepr string) {
-	h.nodes[nodeRepr] = net.ParseIP("0.0.0.0")
+func (h *ConsistentHash) addNode(nodeRepr string, address net.IP) {
+	h.nodes[nodeRepr] = address
 }
 
 func (h *ConsistentHash) containsNode(nodeRepr string) bool {

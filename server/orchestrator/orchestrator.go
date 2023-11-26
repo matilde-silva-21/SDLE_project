@@ -4,15 +4,53 @@ import (
 	"fmt"
 	"net"
 	"log"
+	amqp "github.com/rabbitmq/amqp091-go"
+	
 	"server-utils/orchestrator/hash"
+	//"server-utils/messageStruct"
 	"server-utils/orchestrator/communication/tcp"
 	"server-utils/orchestrator/communication/rabbitMQ"
 )
 
+
+func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, messageChannel chan []byte) {
+
+	log.Printf("[RabbitMQ] Waiting for Client logs.")
+	for msg := range rabbitChannel {
+	   messageChannel <- msg.Body
+	}
+}
+
+func acceptIncomingTCPMessages(listener *net.TCPListener, messageChannel chan []byte) {
+
+	for {
+        // Accept incoming connections
+        conn, err := listener.AcceptTCP()
+        if err != nil {
+            fmt.Println("Error:", err)
+            continue
+        }
+
+		messageChannel <- tcp.ReadMessage(conn)
+    }
+
+}
+
+
+
 func OrchestratorExample() {
 
-	// <------------ RabbitMQ channel ------------>
+	// <------------ Go channel for sharing messages between threads ------------>
+
+	incomingMessageChannel := make(chan []byte, 100)
+	defer close(incomingMessageChannel)
+
+	// <------------------------------------------------------------------------->
 	
+
+	// sudo docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management
+	// <------------ RabbitMQ communication channel ------------>
+
 	conn, ch := rabbitmq.CreateChannel()
 	
 	defer conn.Close()
@@ -28,7 +66,7 @@ func OrchestratorExample() {
 	
 	messages := rabbitmq.CreateConsumerChannel(ch, q)
 	
-	go rabbitmq.HandleIncomingMessages(messages) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	go transferIncomingRabbitMessages(messages, incomingMessageChannel) // Go Routine to handle incoming RabbitMQ messages on a separate thread
 	
 	// <------------------------------------------>
 
@@ -67,22 +105,17 @@ func OrchestratorExample() {
     }
     defer listener.Close()
 
-    fmt.Println("Server is listening on port 8080")
+    log.Printf("[TCP] Server is listening on port 8080\n\n")
+
+
+	go acceptIncomingTCPMessages(listener, incomingMessageChannel)
+	
+	// <--------------------------------------------------------------------------->
 
 
 	for {
-        // Accept incoming connections
-        conn, err := listener.AcceptTCP()
-        if err != nil {
-            fmt.Println("Error:", err)
-            continue
-        }
-
-        // Handle client connection.....
-		message := tcp.ReadMessage(conn)
-		log.Printf(message)
-    }
-	
-	// <--------------------------------------------------------------------------->
+		m := <- incomingMessageChannel
+		log.Printf("[x] %s", m)
+	}
 
 }

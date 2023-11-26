@@ -58,14 +58,14 @@ func SendMessage(conn *net.TCPConn, message string) {
 }
 
 // ReadMessage reads a message from the TCP connection.
-func ReadMessage(conn *net.TCPConn) string {
+func ReadMessage(conn *net.TCPConn) []byte {
 	buffer := make([]byte, 1024)
 	n, err := conn.Read(buffer)
 	if err != nil {
 		log.Print("Error reading message:", err)
-		return ""
+		return []byte{}
 	}
-	return string(buffer[:n])
+	return buffer[:n]
 }
 
 // RespondPing responds to a ping message with a pong.
@@ -147,6 +147,6 @@ func ServerSocketExample(){
 
         // Handle client connection.....
 		message := ReadMessage(conn)
-		log.Printf(message)
+		log.Printf("[x] %s", message)
     }
 }

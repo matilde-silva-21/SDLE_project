@@ -65,7 +65,7 @@ func BindRoutingKeys(ch *amqp.Channel, queue *amqp.Queue, exchangeName string, t
 		)
 	   failOnError(err, "Failed to bind queue to exchange")
 	}
- }
+}
 
 
 func CreateConsumerChannel(ch *amqp.Channel, queue *amqp.Queue)  <-chan amqp.Delivery {
@@ -102,7 +102,7 @@ func PublishMessage(contentType string, body string, ch *amqp.Channel, exchangeN
 	}
 }
 
-func HandleIncomingMessages(messages <-chan amqp.Delivery) {
+func PrintIncomingMessages(messages <-chan amqp.Delivery) {
 
 	log.Printf("[*] Waiting for logs. To exit press CTRL+C")
 	for msg := range messages {
@@ -133,5 +133,5 @@ func RabbitMQExample() {
 	
 	messages := CreateConsumerChannel(ch, q)
 
-	HandleIncomingMessages(messages)
+	PrintIncomingMessages(messages)
 }
