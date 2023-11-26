@@ -62,7 +62,13 @@ func ReadMessage(conn *net.TCPConn) []byte {
 	buffer := make([]byte, 1024)
 	n, err := conn.Read(buffer)
 	if err != nil {
-		log.Print("Error reading message:", err)
+
+		if err.Error() == "EOF" {
+			log.Println("Connection closed by remote side.")
+		} else {
+			log.Print("Error reading message: ", err)
+		}
+		
 		return []byte{}
 	}
 	return buffer[:n]

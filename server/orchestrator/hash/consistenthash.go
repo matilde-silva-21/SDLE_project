@@ -28,7 +28,7 @@ type (
 		replicas int
 		keys     []uint64
 		ring     map[uint64][]any
-		nodes    map[string]net.IP
+		nodes    map[string]*net.TCPConn
 		lock     sync.RWMutex
 	}
 )
@@ -52,20 +52,20 @@ func NewCustomConsistentHash(replicas int, fn Func) *ConsistentHash {
 		hashFunc: fn,
 		replicas: replicas,
 		ring:     make(map[uint64][]any),
-		nodes:    make(map[string]net.IP),
+		nodes:    make(map[string]*net.TCPConn),
 	}
 }
 
 // Add adds the node with the number of h.replicas,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) Add(node any, address net.IP) {
+func (h *ConsistentHash) Add(node any, address *net.TCPConn) {
 	h.AddWithReplicas(node, h.replicas, address)
 }
 
 // AddWithReplicas adds the node with the number of replicas,
 // replicas will be truncated to h.replicas if it's larger than h.replicas,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address net.IP) {
+func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address *net.TCPConn) {
 	h.Remove(node)
 
 	if replicas > h.replicas {
@@ -90,7 +90,7 @@ func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address net.IP)
 
 // AddWithWeight adds the node with weight, the weight can be 1 to 100, indicates the percent,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) AddWithWeight(node any, weight int, address net.IP) {
+func (h *ConsistentHash) AddWithWeight(node any, weight int, address *net.TCPConn) {
 	// don't need to make sure weight not larger than TopWeight,
 	// because AddWithReplicas makes sure replicas cannot be larger than h.replicas
 	replicas := h.replicas * weight / TopWeight
@@ -161,7 +161,9 @@ func (h *ConsistentHash) GetClosestNodes(v any, numNodes int) ([]any, bool) {
 }
 
 
-
+func (h *ConsistentHash) GetNumberOfKeys() int{
+	return len(h.keys)
+}
 
 
 // Remove removes the given node from h.
@@ -190,7 +192,7 @@ func (h *ConsistentHash) Remove(node any) {
 }
 
 // Get returns the map of nodes.
-func (h *ConsistentHash) GetNodes() map[string]net.IP{
+func (h *ConsistentHash) GetNodes() map[string]*net.TCPConn{
 	return h.nodes
 }
 
@@ -215,7 +217,7 @@ func (h *ConsistentHash) removeRingNode(hash uint64, nodeRepr string) {
 	}
 }
 
-func (h *ConsistentHash) addNode(nodeRepr string, address net.IP) {
+func (h *ConsistentHash) addNode(nodeRepr string, address *net.TCPConn) {
 	h.nodes[nodeRepr] = address
 }
 

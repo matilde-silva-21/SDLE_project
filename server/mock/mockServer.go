@@ -5,6 +5,7 @@ import (
 	messageStruct "server-utils/messageStruct"
 	"log"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"time"
 )
 
 
@@ -30,6 +31,13 @@ func tcp() {
 	defer conn.Close()
 	
 	_, err = conn.Write([]byte("oooooweeeeee"))
+	if err != nil {
+		log.Print("Error sending message:", err)
+	}
+
+	time.Sleep(6 * time.Second)
+
+	_, err = conn.Write([]byte("second message"))
 	if err != nil {
 		log.Print("Error sending message:", err)
 	}

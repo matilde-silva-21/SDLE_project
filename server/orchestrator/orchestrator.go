@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"log"
+	"strconv"
 	amqp "github.com/rabbitmq/amqp091-go"
 	
 	"server-utils/orchestrator/hash"
@@ -13,27 +14,29 @@ import (
 )
 
 
-func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, messageChannel chan []byte) {
+func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery) {
 
 	log.Printf("[RabbitMQ] Waiting for Client logs.")
 	for msg := range rabbitChannel {
-	   messageChannel <- msg.Body
+	   log.Printf("[x] %s", msg.Body)
+	   // TODO handle Client Message
 	}
 }
 
-func acceptIncomingTCPMessages(listener *net.TCPListener, messageChannel chan []byte) {
+func readTCPConnection(conn *net.TCPConn) {
 
 	for {
-        // Accept incoming connections
-        conn, err := listener.AcceptTCP()
-        if err != nil {
-            fmt.Println("Error:", err)
-            continue
-        }
 
-		messageChannel <- tcp.ReadMessage(conn)
-    }
+		message := tcp.ReadMessage(conn)
 
+		if len(message) == 0  {
+			// TODO Connection closed or error occurred
+			break
+		}
+
+		log.Printf("[o] %s", message)
+	   // TODO handle Server Message
+	}
 }
 
 
@@ -66,7 +69,7 @@ func OrchestratorExample() {
 	
 	messages := rabbitmq.CreateConsumerChannel(ch, q)
 	
-	go transferIncomingRabbitMessages(messages, incomingMessageChannel) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	go transferIncomingRabbitMessages(messages) // Go Routine to handle incoming RabbitMQ messages on a separate thread
 	
 	// <------------------------------------------>
 
@@ -74,17 +77,6 @@ func OrchestratorExample() {
 	// <------------ Create Hashing Ring ------------>
 	
 	hashRing := hash.NewCustomConsistentHash(2, hash.Hash) // MD5 hash
-
-	/*hashRing.Add("server 1")
-	hashRing.Add("server 2")
-	hashRing.Add("server 3")
-	hashRing.Add("server 4")
-	hashRing.Add("server 5")*/
-	
-	fmt.Println(hashRing.GetNodes())
-	fmt.Println(hashRing.GetRing())
-
-	//fmt.Println(hashRing.GetClosestNodes("url123", 3))
 	
 	// <--------------------------------------------->
 
@@ -107,15 +99,18 @@ func OrchestratorExample() {
 
     log.Printf("[TCP] Server is listening on port 8080\n\n")
 
-
-	go acceptIncomingTCPMessages(listener, incomingMessageChannel)
+	
+	// Loop through, waiting for connections from the server
+	for {
+		conn, err := listener.AcceptTCP()
+        if err != nil {
+			fmt.Println("Error:", err)
+            continue
+        }
+		
+		hashRing.Add("server " + strconv.Itoa(hashRing.GetNumberOfKeys()) , conn)
+		go readTCPConnection(conn)
+    }
 	
 	// <--------------------------------------------------------------------------->
-
-
-	for {
-		m := <- incomingMessageChannel
-		log.Printf("[x] %s", m)
-	}
-
 }
