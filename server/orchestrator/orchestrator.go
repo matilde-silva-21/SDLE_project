@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"log"
-	"strconv"
 	"sync"
 	amqp "github.com/rabbitmq/amqp091-go"
 	
@@ -24,15 +23,16 @@ func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing
 
 		messageObject := messageStruct.JSONToMessage(msg.Body)
 		url := messageObject.ListURL
+
 		mutex.Lock()
 
-		nodes, res := hashRing.GetClosestNodes(url, 3)
+		nodes, _ := hashRing.GetClosestNodes(url, 3)
 		var ip string
-		ipList := []
+		ipList := []string{}
 
 		for _, elem := range(nodes){
 
-			if node, ok := nodes[0].(string); ok {
+			if node, ok := elem.(string); ok {
 				ip = hashRing.GetServerIP(node)
 				ipList = append(ipList, ip)
 			} else {
@@ -46,19 +46,23 @@ func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing
 	}
 }
 
-func readTCPConnection(conn *net.TCPConn) {
+func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash) {
 
 	for {
 
 		message := tcp.ReadMessage(conn)
 
 		if len(message) == 0  {
-			// TODO Connection closed or error occurred
+			mutex.Lock()
+
+			hashRing.RemoveNodeByIP(conn.RemoteAddr().String())
+			fmt.Println(hashRing.GetNodes())
+			mutex.Unlock()
 			break
 		}
 
 		log.Printf("[TCP] %s", message)
-	   // TODO handle Server Message
+		// TODO handle Server Message
 	}
 }
 
@@ -133,9 +137,8 @@ func OrchestratorExample() {
             continue
         }
 
-		// TODO criar funçao que da o nome certo (usar o len é mau, pode dar overwrite de nomes)
-		hashRing.Add("server " + strconv.Itoa(hashRing.GetNumberOfKeys()) , conn.RemoteAddr().String())
-		go readTCPConnection(conn)
+		hashRing.Add(hashRing.GetServerName() , conn.RemoteAddr().String())
+		go readTCPConnection(conn, hashRing)
     }
 	
 	// <--------------------------------------------------------------------------->

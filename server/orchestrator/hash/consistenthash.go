@@ -6,7 +6,8 @@ import (
 	"strconv"
 	"sync"
 	"slices"
-	
+	"strings"
+
 	"github.com/zeromicro/go-zero/core/lang"
 )
 
@@ -171,6 +172,46 @@ func (h *ConsistentHash) GetNumberOfKeys() int{
 	return len(h.nodes)
 }
 
+
+func (h *ConsistentHash) GetServerName() string {
+	var numbers []int
+
+	for key := range h.nodes {
+
+		numberStr := strings.TrimPrefix(key, "server ")
+		number, err := strconv.Atoi(numberStr)
+
+		if err == nil {
+			numbers = append(numbers, number)
+		}
+	}
+
+	sort.Ints(numbers)
+
+	// Find the smallest available number
+	smallestNumber := 0
+	for _, num := range numbers {
+		if num == smallestNumber {
+			smallestNumber++
+		} else {
+			break
+		}
+	}
+
+	return fmt.Sprintf("server %d", smallestNumber)
+}
+
+
+func (h *ConsistentHash) RemoveNodeByIP(address string) {
+
+	for key, value := range(h.nodes){
+		if(value == address){
+			h.Remove(key)
+			return
+		}
+	}
+
+}
 
 // Remove removes the given node from h.
 func (h *ConsistentHash) Remove(node any) {
