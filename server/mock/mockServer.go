@@ -35,7 +35,7 @@ func tcp() {
 		log.Print("Error sending message:", err)
 	}
 
-	time.Sleep(6 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	_, err = conn.Write([]byte("second message"))
 	if err != nil {

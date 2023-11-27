@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	"net"
+	"slices"
 	
 	"github.com/zeromicro/go-zero/core/lang"
 )
@@ -28,7 +28,7 @@ type (
 		replicas int
 		keys     []uint64
 		ring     map[uint64][]any
-		nodes    map[string]*net.TCPConn
+		nodes    map[string]string // String is the IP address
 		lock     sync.RWMutex
 	}
 )
@@ -52,20 +52,20 @@ func NewCustomConsistentHash(replicas int, fn Func) *ConsistentHash {
 		hashFunc: fn,
 		replicas: replicas,
 		ring:     make(map[uint64][]any),
-		nodes:    make(map[string]*net.TCPConn),
+		nodes:    make(map[string]string),
 	}
 }
 
 // Add adds the node with the number of h.replicas,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) Add(node any, address *net.TCPConn) {
+func (h *ConsistentHash) Add(node any, address string) {
 	h.AddWithReplicas(node, h.replicas, address)
 }
 
 // AddWithReplicas adds the node with the number of replicas,
 // replicas will be truncated to h.replicas if it's larger than h.replicas,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address *net.TCPConn) {
+func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address string) {
 	h.Remove(node)
 
 	if replicas > h.replicas {
@@ -90,7 +90,7 @@ func (h *ConsistentHash) AddWithReplicas(node any, replicas int, address *net.TC
 
 // AddWithWeight adds the node with weight, the weight can be 1 to 100, indicates the percent,
 // the later call will overwrite the replicas of the former calls.
-func (h *ConsistentHash) AddWithWeight(node any, weight int, address *net.TCPConn) {
+func (h *ConsistentHash) AddWithWeight(node any, weight int, address string) {
 	// don't need to make sure weight not larger than TopWeight,
 	// because AddWithReplicas makes sure replicas cannot be larger than h.replicas
 	replicas := h.replicas * weight / TopWeight
@@ -112,8 +112,6 @@ func (h *ConsistentHash) Get(v any) (any, bool) {
 	}) % len(h.keys)
 
 	nodes := h.ring[h.keys[index]]
-
-	fmt.Println("\n\ndnwkdke", index, h.keys, h.keys[index], nodes, "\n")
 
 	switch len(nodes) {
 		case 0:
@@ -147,10 +145,15 @@ func (h *ConsistentHash) GetClosestNodes(v any, numNodes int) ([]any, bool) {
 	}) % len(h.keys)
 
 	var closestNodes []any
-	for i := 0; i < numNodes; i++ {
+	for i := 0; (len(closestNodes) < numNodes) && (len(closestNodes) < len(h.nodes)); i++ {
 		keyIndex := (index + i) % len(h.keys)
 		nodes := h.ring[h.keys[keyIndex]]
-		closestNodes = append(closestNodes, nodes...)
+
+		for _, elem := range(nodes){
+			if(!slices.Contains(closestNodes, elem)){
+				closestNodes = append(closestNodes, elem)
+			}
+		}
 	}
 
 	if len(closestNodes) == 0 {
@@ -160,9 +163,12 @@ func (h *ConsistentHash) GetClosestNodes(v any, numNodes int) ([]any, bool) {
 	return closestNodes, true
 }
 
+func (h *ConsistentHash) GetServerIP(server string) string {
+	return h.nodes[server]
+}
 
 func (h *ConsistentHash) GetNumberOfKeys() int{
-	return len(h.keys)
+	return len(h.nodes)
 }
 
 
@@ -192,7 +198,7 @@ func (h *ConsistentHash) Remove(node any) {
 }
 
 // Get returns the map of nodes.
-func (h *ConsistentHash) GetNodes() map[string]*net.TCPConn{
+func (h *ConsistentHash) GetNodes() map[string]string{
 	return h.nodes
 }
 
@@ -217,7 +223,7 @@ func (h *ConsistentHash) removeRingNode(hash uint64, nodeRepr string) {
 	}
 }
 
-func (h *ConsistentHash) addNode(nodeRepr string, address *net.TCPConn) {
+func (h *ConsistentHash) addNode(nodeRepr string, address string) {
 	h.nodes[nodeRepr] = address
 }
 

@@ -47,10 +47,12 @@ func (message MessageStruct) ToJSON() []byte{
 }
 
 
-func JSONToMessage(body []byte, message *MessageStruct){
-	err := json.Unmarshal(body, *message)
+func JSONToMessage(body []byte) *MessageStruct{
+	var message MessageStruct
+
+	err := json.Unmarshal(body, &message)
 	if(err != nil){
         fmt.Println("Error:", err)
-		return
 	}
+	return &message
 }

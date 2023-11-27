@@ -5,21 +5,44 @@ import (
 	"net"
 	"log"
 	"strconv"
+	"sync"
 	amqp "github.com/rabbitmq/amqp091-go"
 	
 	"server-utils/orchestrator/hash"
-	//"server-utils/messageStruct"
+	"server-utils/messageStruct"
 	"server-utils/orchestrator/communication/tcp"
 	"server-utils/orchestrator/communication/rabbitMQ"
 )
 
+var mutex sync.Mutex
 
-func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery) {
+func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *hash.ConsistentHash) {
 
 	log.Printf("[RabbitMQ] Waiting for Client logs.")
 	for msg := range rabbitChannel {
-	   log.Printf("[x] %s", msg.Body)
-	   // TODO handle Client Message
+		log.Printf("[RabbitMQ] %s", msg.Body)
+
+		messageObject := messageStruct.JSONToMessage(msg.Body)
+		url := messageObject.ListURL
+		mutex.Lock()
+
+		nodes, res := hashRing.GetClosestNodes(url, 3)
+		var ip string
+		ipList := []
+
+		for _, elem := range(nodes){
+
+			if node, ok := nodes[0].(string); ok {
+				ip = hashRing.GetServerIP(node)
+				ipList = append(ipList, ip)
+			} else {
+				log.Print("Unexpected type for nodes key.")
+			}
+		}
+
+		mutex.Unlock()
+
+		// TODO send message with addresses to the first IP
 	}
 }
 
@@ -34,7 +57,7 @@ func readTCPConnection(conn *net.TCPConn) {
 			break
 		}
 
-		log.Printf("[o] %s", message)
+		log.Printf("[TCP] %s", message)
 	   // TODO handle Server Message
 	}
 }
@@ -50,6 +73,15 @@ func OrchestratorExample() {
 
 	// <------------------------------------------------------------------------->
 	
+
+
+	// <------------ Create Hashing Ring ------------>
+	
+	hashRing := hash.NewCustomConsistentHash(2, hash.Hash) // MD5 hash
+	
+	// <--------------------------------------------->
+
+
 
 	// sudo docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management
 	// <------------ RabbitMQ communication channel ------------>
@@ -69,16 +101,9 @@ func OrchestratorExample() {
 	
 	messages := rabbitmq.CreateConsumerChannel(ch, q)
 	
-	go transferIncomingRabbitMessages(messages) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	go transferIncomingRabbitMessages(messages, hashRing) // Go Routine to handle incoming RabbitMQ messages on a separate thread
 	
 	// <------------------------------------------>
-
-
-	// <------------ Create Hashing Ring ------------>
-	
-	hashRing := hash.NewCustomConsistentHash(2, hash.Hash) // MD5 hash
-	
-	// <--------------------------------------------->
 
 
 	// <------------ Create TCP Listener For Servers To join Hash Ring ------------>
@@ -107,8 +132,9 @@ func OrchestratorExample() {
 			fmt.Println("Error:", err)
             continue
         }
-		
-		hashRing.Add("server " + strconv.Itoa(hashRing.GetNumberOfKeys()) , conn)
+
+		// TODO criar funçao que da o nome certo (usar o len é mau, pode dar overwrite de nomes)
+		hashRing.Add("server " + strconv.Itoa(hashRing.GetNumberOfKeys()) , conn.RemoteAddr().String())
 		go readTCPConnection(conn)
     }
 	
