@@ -7,10 +7,10 @@ import (
 	"sync"
 	amqp "github.com/rabbitmq/amqp091-go"
 	
-	"server-utils/orchestrator/hash"
-	"server-utils/messageStruct"
-	"server-utils/orchestrator/communication/tcp"
-	"server-utils/orchestrator/communication/rabbitMQ"
+	"sdle/server/orchestrator/hash"
+	"sdle/server/utils/messageStruct"
+	"sdle/server/orchestrator/communication/tcp"
+	"sdle/server/orchestrator/communication/rabbitMQ"
 )
 
 var mutex sync.Mutex

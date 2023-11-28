@@ -2,7 +2,7 @@ package main
 
 import (
 	"net"
-	messageStruct "server-utils/messageStruct"
+	messageStruct "sdle/server/utils/messageStruct"
 	"log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
