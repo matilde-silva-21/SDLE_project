@@ -47,14 +47,15 @@ func (message MessageStruct) ToJSON() []byte{
 }
 
 
-func JSONToMessage(body []byte) MessageStruct{
+func JSONToMessage(body []byte) (MessageStruct,error){
 	var message MessageStruct
 
 	err := json.Unmarshal(body, &message)
 	if(err != nil){
-        fmt.Println("Error:", err)
+        //fmt.Println("Error:", err)
+		return message, err
 	}
-	return message
+	return message, nil
 }
 
 func (message MessageStruct) BuildMessageForServer(IPaddresses []string) []byte{

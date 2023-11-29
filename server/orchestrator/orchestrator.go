@@ -15,12 +15,12 @@ import (
 
 var mutex sync.Mutex
 
-func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *hash.ConsistentHash, TCPchannels *map[string](chan []byte) ) {
+func handleIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *hash.ConsistentHash, TCPchannels *map[string](chan []byte) ) {
 
 	log.Printf("[RabbitMQ] Waiting for Client logs.")
 	for msg := range rabbitChannel {
 		
-		messageObject := messageStruct.JSONToMessage(msg.Body)
+		messageObject, _ := messageStruct.JSONToMessage(msg.Body)
 		url := messageObject.ListURL
 		
 		log.Printf("[RabbitMQ] Received message (url.%s): %s\n", url, msg.Body)
@@ -47,7 +47,26 @@ func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing
 	}
 }
 
-func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, messagesToSend chan []byte) {
+
+func handleOutgoingRabbitMessages(messagesToSend chan []byte, ch *amqp.Channel, exchangeName string) {
+
+	for {
+		select {
+			case payload := <-messagesToSend:
+				messageObject, err := messageStruct.JSONToMessage(payload)
+				if(err == nil){
+					url := messageObject.ListURL
+	
+					rabbitmq.PublishMessage("text/json", string(payload), ch, exchangeName, url)
+					log.Printf("[RabbitMQ] Sent message (%s): %s\n", url, payload)
+				}
+		}
+	}
+
+}
+
+
+func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, messagesToSend chan []byte, rabbitChannel chan []byte) {
 
 	ip := conn.RemoteAddr().String()
 
@@ -69,10 +88,8 @@ func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, message
 					return
 				} else if (len(message) != 0) {
 					log.Printf("[TCP] Received message from %s: %s\n", ip, message)
+					rabbitChannel <- message
 				}
-		
-
-				// TODO reencaminhar mensagem para os clientes
 		}
 		
 	}
@@ -85,6 +102,7 @@ func OrchestratorExample() {
 	// <------------ Create a map with the channels corresponding to each TCP connection. The channels will share messages between threads ------------>
 
 	channelsMap := make(map[string](chan []byte)) // Key is the IP address, Value is the channel
+	outgoingRabbitChannel := make(chan []byte, 100)
 
 	// <------------------------------------------------------------------------->
 	
@@ -116,7 +134,8 @@ func OrchestratorExample() {
 	
 	messages := rabbitmq.CreateConsumerChannel(ch, q)
 	
-	go transferIncomingRabbitMessages(messages, hashRing, &channelsMap) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	go handleIncomingRabbitMessages(messages, hashRing, &channelsMap) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	go handleOutgoingRabbitMessages(outgoingRabbitChannel, ch, exchangeName) // Go Routine to handle outgoing RabbitMQ messages on a separate thread
 	
 	// <-------------------------------------------------------->
 
@@ -158,7 +177,7 @@ func OrchestratorExample() {
 		
 		channelsMap[ipString] = incomingMessageChannel // Add channel to channel map
 
-		go readTCPConnection(conn, hashRing, incomingMessageChannel) // Call thread to continuously poll TCP connection / outgoing messages channel 
+		go readTCPConnection(conn, hashRing, incomingMessageChannel, outgoingRabbitChannel) // Call thread to continuously poll TCP connection and outgoing messages channel 
     }
 	
 	// <--------------------------------------------------------------------------->
