@@ -183,7 +183,7 @@ func (list ShoppingList) JSON() string{
 		bought = list.CheckIfItemBought(key)
 		quantity := list.CheckItemQuantity(key)
 
-		result += fmt.Sprintf( "{item: \"%s\", quantity: %d, bought: %t}", key, quantity, bought)
+		result += fmt.Sprintf( "{\"item\": \"%s\", \"quantity\": %d, \"bought\": %t}", key, quantity, bought)
 
 	}
 

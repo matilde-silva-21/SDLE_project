@@ -40,10 +40,8 @@ func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing
 				log.Print("Unexpected type for nodes key.")
 			}
 		}
-
-		// TODO criar protocolo de mensagens
 		
-		(*TCPchannels)[ipList[0]]<-msg.Body // Send message body to TCP
+		(*TCPchannels)[ipList[0]]<-((messageObject).BuildMessageForServer(ipList)) // Send message body to TCP
 		
 		mutex.Unlock()
 	}

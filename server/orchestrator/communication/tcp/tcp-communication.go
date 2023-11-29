@@ -61,7 +61,6 @@ func SendMessage(conn *net.TCPConn, message string) {
 func ReadMessage(conn *net.TCPConn) ([]byte, error) {
 	buffer := make([]byte, 1024)
 
-	// Set a read deadline of, for example, 1 millisecond
 	err := conn.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
 	if err != nil {
 		return []byte{}, err
@@ -69,12 +68,10 @@ func ReadMessage(conn *net.TCPConn) ([]byte, error) {
 
 	n, err := conn.Read(buffer)
 	if err != nil {
-		// Check if the error is a timeout, indicating no data is available
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 			return []byte{}, nil // No data available, return empty slice
 		}
 
-		// Handle other errors
 		if err.Error() == "EOF" {
 			log.Println("Connection closed by remote side.")
 		} else {
