@@ -1,58 +1,15 @@
 package main
 
 import (
-	"net"
 	messageStruct "sdle/server/utils/messageStruct"
 	"log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 )
 
-
 func failOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
-	}
-}
-
-func tcp() {
-	address := "localhost:8080"
-	
-	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
-	if err != nil {
-		return
-	}
-	
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err != nil {
-		return
-	}
-	
-	defer conn.Close()
-	
-	_, err = conn.Write([]byte("first message"))
-	if err != nil {
-		log.Print("Error sending message:", err)
-	}
-
-	time.Sleep(10 * time.Second)
-
-	_, err = conn.Write([]byte("second message"))
-	if err != nil {
-		log.Print("Error sending message:", err)
-	}
-
-	for {
-		buffer := make([]byte, 1024)
-		n, err := conn.Read(buffer)
-
-		if err != nil {
-
-			log.Print("Error reading message: ", err)
-			return
-		}
-
-		log.Print(string(buffer[:n]))
 	}
 }
 
@@ -102,6 +59,10 @@ func rabbit() {
 
 func main(){
 
-	tcp()
+	for {
+
+		rabbit()
+		time.Sleep(10 * time.Second)
+	}
 
 }

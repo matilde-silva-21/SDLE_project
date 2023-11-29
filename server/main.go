@@ -66,7 +66,7 @@ func main() {
 
 	fmt.Println("Hello from server")
 
-	ShopListExample()
+	//ShopListExample()
 
 	orchestrator.OrchestratorExample();
 }

@@ -15,14 +15,15 @@ import (
 
 var mutex sync.Mutex
 
-func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *hash.ConsistentHash) {
+func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *hash.ConsistentHash, TCPchannels *map[string](chan []byte) ) {
 
 	log.Printf("[RabbitMQ] Waiting for Client logs.")
 	for msg := range rabbitChannel {
-		log.Printf("[RabbitMQ] %s", msg.Body)
-
+		
 		messageObject := messageStruct.JSONToMessage(msg.Body)
 		url := messageObject.ListURL
+		
+		log.Printf("[RabbitMQ] Received message (url.%s): %s\n", url, msg.Body)
 
 		mutex.Lock()
 
@@ -40,29 +41,42 @@ func transferIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing
 			}
 		}
 
+		// TODO criar protocolo de mensagens
+		
+		(*TCPchannels)[ipList[0]]<-msg.Body // Send message body to TCP
+		
 		mutex.Unlock()
-
-		// TODO send message with addresses to the first IP
 	}
 }
 
-func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash) {
+func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, messagesToSend chan []byte) {
+
+	ip := conn.RemoteAddr().String()
 
 	for {
 
-		message := tcp.ReadMessage(conn)
+		select {
 
-		if len(message) == 0  {
-			mutex.Lock()
+			case payload := <-(messagesToSend): // When channel has a message, route it to the server
+				tcp.SendMessage(conn, string(payload))
+				log.Printf("[TCP] Sent message to %s: %s\n", ip, string(payload))
 
-			hashRing.RemoveNodeByIP(conn.RemoteAddr().String())
-			fmt.Println(hashRing.GetNodes())
-			mutex.Unlock()
-			break
+			default:
+				message, err := tcp.ReadMessage(conn)
+		
+				if (err != nil) {
+					mutex.Lock()
+					hashRing.RemoveNodeByIP(ip)
+					mutex.Unlock()
+					return
+				} else if (len(message) != 0) {
+					log.Printf("[TCP] Received message from %s: %s\n", ip, message)
+				}
+		
+
+				// TODO reencaminhar mensagem para os clientes
 		}
-
-		log.Printf("[TCP] %s", message)
-		// TODO handle Server Message
+		
 	}
 }
 
@@ -70,10 +84,9 @@ func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash) {
 
 func OrchestratorExample() {
 
-	// <------------ Go channel for sharing messages between threads ------------>
+	// <------------ Create a map with the channels corresponding to each TCP connection. The channels will share messages between threads ------------>
 
-	incomingMessageChannel := make(chan []byte, 100)
-	defer close(incomingMessageChannel)
+	channelsMap := make(map[string](chan []byte)) // Key is the IP address, Value is the channel
 
 	// <------------------------------------------------------------------------->
 	
@@ -105,9 +118,9 @@ func OrchestratorExample() {
 	
 	messages := rabbitmq.CreateConsumerChannel(ch, q)
 	
-	go transferIncomingRabbitMessages(messages, hashRing) // Go Routine to handle incoming RabbitMQ messages on a separate thread
+	go transferIncomingRabbitMessages(messages, hashRing, &channelsMap) // Go Routine to handle incoming RabbitMQ messages on a separate thread
 	
-	// <------------------------------------------>
+	// <-------------------------------------------------------->
 
 
 	// <------------ Create TCP Listener For Servers To join Hash Ring ------------>
@@ -137,8 +150,17 @@ func OrchestratorExample() {
             continue
         }
 
-		hashRing.Add(hashRing.GetServerName() , conn.RemoteAddr().String())
-		go readTCPConnection(conn, hashRing)
+		ipString := conn.RemoteAddr().String()
+		
+		hashRing.Add(hashRing.GetServerName() , ipString) // Add server to hash ring
+		
+		
+		incomingMessageChannel := make(chan []byte, 100) // Create Channel for the TCP connection know which messages should be sent
+		defer close(incomingMessageChannel)
+		
+		channelsMap[ipString] = incomingMessageChannel // Add channel to channel map
+
+		go readTCPConnection(conn, hashRing, incomingMessageChannel) // Call thread to continuously poll TCP connection / outgoing messages channel 
     }
 	
 	// <--------------------------------------------------------------------------->

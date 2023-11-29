@@ -57,27 +57,41 @@ func SendMessage(conn *net.TCPConn, message string) {
 	}
 }
 
-// ReadMessage reads a message from the TCP connection.
-func ReadMessage(conn *net.TCPConn) []byte {
+// ReadMessage reads a message from the TCP connection (non-blocking read).
+func ReadMessage(conn *net.TCPConn) ([]byte, error) {
 	buffer := make([]byte, 1024)
+
+	// Set a read deadline of, for example, 1 millisecond
+	err := conn.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
+	if err != nil {
+		return []byte{}, err
+	}
+
 	n, err := conn.Read(buffer)
 	if err != nil {
+		// Check if the error is a timeout, indicating no data is available
+		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			return []byte{}, nil // No data available, return empty slice
+		}
 
+		// Handle other errors
 		if err.Error() == "EOF" {
 			log.Println("Connection closed by remote side.")
 		} else {
 			log.Print("Error reading message: ", err)
 		}
-		
-		return []byte{}
+
+		return []byte{}, err
 	}
-	return buffer[:n]
+
+	return buffer[:n], nil
 }
+
 
 // RespondPing responds to a ping message with a pong.
 func RespondPing(conn *net.TCPConn) {
 	for {
-		message := ReadMessage(conn)
+		message, _ := ReadMessage(conn)
 		log.Printf("Received ping: %s, now sending pong...", message)
 		SendMessage(conn, "PONG")
 		time.Sleep(1 * time.Second) // Adjust the delay as needed
@@ -91,7 +105,7 @@ func SendPing(conn *net.TCPConn) {
 		log.Println("Sending ping...")
 		startTime := time.Now()
 		SendMessage(conn, "PING")
-		response := ReadMessage(conn)
+		response, _ := ReadMessage(conn)
 		elapsed := time.Since(startTime)
 		log.Printf("Received: %s, RTT: %s", response, elapsed)
 		time.Sleep(1 * time.Second) // Adjust the delay as needed
@@ -152,7 +166,10 @@ func ServerSocketExample(){
         }
 
         // Handle client connection.....
-		message := ReadMessage(conn)
-		log.Printf("[x] %s", message)
+		message, err := ReadMessage(conn)
+		if(len(message) > 0) {
+
+			log.Printf("[x] %s", message)
+		}
     }
 }
