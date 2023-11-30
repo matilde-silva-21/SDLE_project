@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
 
@@ -60,6 +61,7 @@ func CreateShoppingList(c *gin.Context) {
 	newShoppingListModel, createErr := shoppingList.Create(db)
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
+		fmt.Println(createErr.Error())
 		return
 	}
 
@@ -245,7 +247,7 @@ func RemoveItemFromShoppingList(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	if isLoggedIn(c) {
-		c.Redirect(http.StatusFound, "/lists")
+		c.IndentedJSON(http.StatusOK, "")
 		return
 	}
 
