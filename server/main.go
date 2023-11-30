@@ -7,7 +7,6 @@ import (
 	"sdle/m/v2/api"
 	"sdle/m/v2/database"
 
-	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
 
