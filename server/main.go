@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sdle/server/orchestrator"
+	//"sdle/server/orchestrator"
+	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
 )
@@ -60,13 +61,19 @@ func ShopListExample() {
 	fmt.Println(shopList1.JSON())
 	fmt.Println("\n")
 
+	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Add)
+
+	fmt.Println("\n", string(messageFormat))
+
+	fmt.Println("\n", shoppingList.MessageFormatToCRDT(messageFormat))
+
 }
 
 func main() {
 
 	fmt.Println("Hello from server")
 
-	//ShopListExample()
+	ShopListExample()
 
-	orchestrator.OrchestratorExample();
+	//orchestrator.OrchestratorExample();
 }
