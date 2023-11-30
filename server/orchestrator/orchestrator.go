@@ -130,7 +130,7 @@ func OrchestratorExample() {
 	
 	q := rabbitmq.DeclareQueue(ch, "")
 	
-	rabbitmq.BindRoutingKeys(ch, q, exchangeName, "url.*")
+	rabbitmq.BindRoutingKeys(ch, q, exchangeName, "server/url.*")
 	
 	messages := rabbitmq.CreateConsumerChannel(ch, q)
 	

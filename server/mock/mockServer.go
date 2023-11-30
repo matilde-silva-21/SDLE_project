@@ -53,6 +53,8 @@ func tcp() {
 		}
 
 		log.Print(string(buffer[:n]))
+
+		rabbit()
 	}
 }
 
@@ -82,7 +84,7 @@ func rabbit() {
 	failOnError(err, "Failed to declare an exchange")
 
 	// Create String to match  
-	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Create, "ListList", "StateState").ToJSON()
+	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Create, "CRDT").ToJSON()
 
 
 	err = ch.Publish(

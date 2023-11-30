@@ -106,7 +106,7 @@ func PrintIncomingMessages(messages <-chan amqp.Delivery) {
 
 	log.Printf("[*] Waiting for logs. To exit press CTRL+C")
 	for msg := range messages {
-	   log.Printf("[x] %s", msg.Body)
+	   log.Printf("[x] Received %s", msg.Body)
 	}
 
 }
