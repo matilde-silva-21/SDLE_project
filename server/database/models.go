@@ -23,6 +23,7 @@ type Item struct {
 	Id   int64        `json:"id" uri:"id"`
 	Name string       `json:"name" form:"itemName"`
 	Done bool         `json:"done" form:"itemDone"`
+	Quantity int64	  `json:"quantity" form:"itemQuantity"`
 	List ShoppingList `json:"list"`
 }
 
@@ -35,7 +36,7 @@ type UserList struct {
 
 func (item *Item) CreateTable(r *SQLiteRepository) error {
 	r.db.Exec("DROP TABLE IF EXISTS Item")
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS Item (Id INTEGER PRIMARY KEY, Name TEXT, Done INTEGER, List TEXT REFERENCES ShoppingList)")
+	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS Item (Id INTEGER PRIMARY KEY, Name TEXT, Done INTEGER, Quantity INTEGER, List TEXT REFERENCES ShoppingList)")
 
 	if err != nil {
 		return err
@@ -44,7 +45,7 @@ func (item *Item) CreateTable(r *SQLiteRepository) error {
 }
 
 func (item *Item) Create(r *SQLiteRepository) (Model, error) {
-	res, err := r.db.Exec("INSERT INTO Item(Name, Done, List) VALUES (?, ?, ?)", &item.Name, &item.Done, &item.List.Id)
+	res, err := r.db.Exec("INSERT INTO Item(Name, Done, Quantity, List) VALUES (?, ?, ?, ?)", &item.Name, &item.Done, &item.Quantity, &item.List.Id)
 
 	if err != nil {
 		return nil, err
@@ -73,7 +74,7 @@ func (item *Item) Delete(r *SQLiteRepository) error {
 
 func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 	updatedItem := updated.(*Item)
-	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.List.Id&item.Id)
+	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.Quantity, updatedItem.List.Id&item.Id)
 
 	if err != nil {
 		return err
@@ -92,7 +93,7 @@ func (item *Item) Read(r *SQLiteRepository) (Model, error) {
 	res := r.db.QueryRow("SELECT * FROM Item WHERE Id = (?) OR Name = (?)", &item.Id, &item.Name)
 
 	var updated Item
-	if err := res.Scan(&updated.Id, &updated.Name, &updated.Done, &updated.List.Id); err != nil {
+	if err := res.Scan(&updated.Id, &updated.Name, &updated.Done, &updated.Quantity, &updated.List.Id); err != nil {
 		return nil, err
 	}
 
@@ -112,7 +113,7 @@ func (item *Item) ReadAll(r *SQLiteRepository) ([]Model, error) {
 
 	for rows.Next() {
 		var i Item
-		if err := rows.Scan(&i.Id, &i.Name, &i.Done); err != nil {
+		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.Quantity); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)
@@ -297,7 +298,7 @@ func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, err
 
 	for rows.Next() {
 		var i Item
-		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.List.Id); err != nil {
+		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.Quantity, &i.List.Id); err != nil {
 			return nil, err
 		}
 		i.List.Name = list.Name

@@ -1,7 +1,11 @@
 package main
 
 import (
+	"log"
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"fmt"
+	"sdle/server/database"
 	"sdle/server/CRDT/lexCounter"
 	shoppingList "sdle/server/CRDT/shoppingList"
 )
@@ -66,4 +70,23 @@ func main() {
 	//SetExample()
 	//LexExample()
 	ShopListExample()
+
+	const filename = "server.db"
+	db, err := sql.Open("sqlite3", filename)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sqliteRepository := database.NewSQLiteRepository(db)
+	createError := sqliteRepository.CreateTables()
+	if createError != nil {
+		fmt.Println(createError.Error())
+		return
+	}
+
+	seedError := sqliteRepository.Seed()
+	if seedError != nil {
+		fmt.Println(seedError.Error())
+	}
 }
