@@ -96,3 +96,7 @@ func Print[K Ordered, V Number](arguments ...LexCounter[K, V]) {
 		fmt.Print(")\n\n")
 	}
 }
+
+func (lexcounter *LexCounter[K, V]) SetID(ID K) {
+	(*lexcounter).id = ID
+}

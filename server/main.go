@@ -66,7 +66,9 @@ func ShopListExample() {
 	fmt.Println("\n", string(messageFormat))
 
 	fmt.Println("\n", shoppingList.MessageFormatToCRDT(messageFormat))
+	shoplistCopy := shoppingList.CreateFromStrings(shopList1.GetURL(), shopList1.GetListName(), shopList1.ListFormatForDatabase(), shopList1.StateFormatForDatabase())
 
+	fmt.Println("\n", shoplistCopy)
 }
 
 func main() {

@@ -32,8 +32,37 @@ func Create(listName string) ShoppingList {
 
 func createFromArguments(listName string, url string, list, state LexCounter.LexCounter[string, int]) ShoppingList {
 
+	(&list).SetID("list")
+	(&state).SetID("state")
+
 	return ShoppingList{url: url, name: listName, list: list, state: state}
 }
+
+
+func CreateFromStrings(listName, url, list, state string) ShoppingList {
+
+	listObject := LexCounter.Create[string, int]("list")
+	stateObject := LexCounter.Create[string, int]("state")
+
+	err := json.Unmarshal([]byte(list), &listObject)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var fake ShoppingList
+		return fake
+	}
+
+	err = json.Unmarshal([]byte(state), &stateObject)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var fake ShoppingList
+		return fake
+	}
+
+	return ShoppingList{url: url, name: listName, list: listObject, state: stateObject}
+}
+
 
 func (list ShoppingList) GetURL() string {
 	return list.url
@@ -286,6 +315,31 @@ func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
 
 	}
 
+}
+
+
+func (list ShoppingList) ListFormatForDatabase() string{
+	jsonList, err := json.Marshal(list.list)
+	
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy string
+		return dummy
+	}
+	
+	return string(jsonList)
+}
+
+func (list ShoppingList) StateFormatForDatabase() string{
+	jsonState, err := json.Marshal(list.state)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy string
+		return dummy
+	}
+
+	return string(jsonState)
 }
 
 
