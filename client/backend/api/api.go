@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"net/http"
 	"sdle/m/v2/database"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -143,8 +142,6 @@ func GetShoppingLists(c *gin.Context) {
 
 func GetShoppingList(c *gin.Context) {
 
-	fmt.Println(c)
-
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
@@ -152,8 +149,6 @@ func GetShoppingList(c *gin.Context) {
 
 	var shoppingList database.ShoppingList
 
-	fmt.Println(shoppingList)
-	
 	if err := c.ShouldBindUri(&shoppingList); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
 		return
