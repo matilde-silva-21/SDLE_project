@@ -57,7 +57,7 @@ func handleOutgoingRabbitMessages(messagesToSend chan []byte, ch *amqp.Channel, 
 				if(err == nil){
 					url := messageObject.ListURL
 	
-					rabbitmq.PublishMessage("text/json", string(payload), ch, exchangeName, url)
+					rabbitmq.PublishMessage("text/json", string(payload), ch, exchangeName, "url."+url)
 					log.Printf("[RabbitMQ] Sent message (%s): %s\n", url, payload)
 				}
 		}
