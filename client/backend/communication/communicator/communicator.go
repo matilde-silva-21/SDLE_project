@@ -23,7 +23,7 @@ func sendMessageToServer(ch *amqp.Channel, exchangeName string, messagesToSend c
 	for {
 		select {
 			case message:= <-messagesToSend:
-				rabbbitmq.PublishMessage("text/json", string(message.ToJSON()), ch, exchangeName, "server/"+message.ListURL)
+				rabbbitmq.PublishMessage("text/json", string(message.ToJSON()), ch, exchangeName, "server/url."+message.ListURL)
 		}
 	}
 	
