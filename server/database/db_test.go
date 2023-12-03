@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"database/sql"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -94,7 +95,7 @@ func TestShoppingListModel(t *testing.T) {
 	if readDeletedErr == nil {
 		t.Errorf("Read after deletion should return an error, but got nil")
 	}
-	
+
 	// Ensure that the returned ShoppingList is nil after deletion
 	if deletedList != nil {
 		t.Errorf("Read after deletion should return nil, but got: %v", deletedList)
@@ -125,9 +126,9 @@ func TestGetShoppingListItems(t *testing.T) {
 
 	// Test CreateTable
 	createTableListErr := newList.CreateTable(sqliteRepository)
-		if createTableListErr != nil {
-			t.Errorf("CreateTable error: %v", createTableListErr)
-		}
+	if createTableListErr != nil {
+		t.Errorf("CreateTable error: %v", createTableListErr)
+	}
 
 	// Create the ShoppingList in the database
 	createdList, createErr := newList.Create(sqliteRepository)
@@ -145,10 +146,9 @@ func TestGetShoppingListItems(t *testing.T) {
 
 	// Test CreateTable
 	createTableItemErr := newItem.CreateTable(sqliteRepository)
-		if createTableItemErr != nil {
-			t.Errorf("CreateTable error: %v", createTableItemErr)
-		}
-	
+	if createTableItemErr != nil {
+		t.Errorf("CreateTable error: %v", createTableItemErr)
+	}
 
 	// Create the Item in the database
 	createdItem, createItemErr := newItem.Create(sqliteRepository)
@@ -248,9 +248,9 @@ func TestUserModel(t *testing.T) {
 
 	// Test CreateTable
 	createTableListErr := newList.CreateTable(sqliteRepository)
-		if createTableListErr != nil {
-			t.Errorf("CreateTable error: %v", createTableListErr)
-		}
+	if createTableListErr != nil {
+		t.Errorf("CreateTable error: %v", createTableListErr)
+	}
 
 	// Create the ShoppingList in the database
 	createdList, createListErr := newList.Create(sqliteRepository)
@@ -266,9 +266,9 @@ func TestUserModel(t *testing.T) {
 
 	// Test CreateTable
 	createTableUserListErr := userList.CreateTable(sqliteRepository)
-		if createTableUserListErr != nil {
-			t.Errorf("CreateTable error: %v", createTableUserListErr)
-		}
+	if createTableUserListErr != nil {
+		t.Errorf("CreateTable error: %v", createTableUserListErr)
+	}
 
 	// Create the UserList in the database
 	_, createUserListErr := userList.Create(sqliteRepository)
@@ -440,10 +440,9 @@ func TestUserListMethods(t *testing.T) {
 
 	// Test CreateTable
 	createTableUserErr := user.CreateTable(sqliteRepository)
-		if createTableUserErr != nil {
-			t.Errorf("CreateTable error: %v", createTableUserErr)
-		}
-
+	if createTableUserErr != nil {
+		t.Errorf("CreateTable error: %v", createTableUserErr)
+	}
 
 	createdUser, createUserErr := user.Create(sqliteRepository)
 	if createUserErr != nil {
@@ -458,9 +457,9 @@ func TestUserListMethods(t *testing.T) {
 
 	// Test CreateTable
 	createTableListErr := shoppingList.CreateTable(sqliteRepository)
-		if createTableListErr != nil {
-			t.Errorf("CreateTable error: %v", createTableListErr)
-		}
+	if createTableListErr != nil {
+		t.Errorf("CreateTable error: %v", createTableListErr)
+	}
 
 	createdList, createListErr := shoppingList.Create(sqliteRepository)
 	if createListErr != nil {
@@ -479,7 +478,6 @@ func TestUserListMethods(t *testing.T) {
 	if createTableUserListErr != nil {
 		t.Errorf("CreateTable error: %v", createTableUserListErr)
 	}
-
 
 	// Call Create to insert the UserList into the database
 	createdUserList, createErr := newUserList.Create(sqliteRepository)
@@ -531,7 +529,6 @@ func TestUserListMethods(t *testing.T) {
 		t.Errorf("Deleted UserList found in ReadDeletedUserList result")
 	}
 }
-
 
 func resetDatabase(repository *SQLiteRepository) error {
 	_, err := repository.db.Exec("DROP TABLE IF EXISTS User")

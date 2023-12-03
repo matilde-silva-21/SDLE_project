@@ -20,11 +20,11 @@ type User struct {
 }
 
 type Item struct {
-	Id   int64        `json:"id" uri:"id"`
-	Name string       `json:"name" form:"itemName"`
-	Done bool         `json:"done" form:"itemDone"`
-	Quantity int64	  `json:"quantity" form:"itemQuantity"`
-	List ShoppingList `json:"list"`
+	Id       int64        `json:"id" uri:"id"`
+	Name     string       `json:"name" form:"itemName"`
+	Done     bool         `json:"done" form:"itemDone"`
+	Quantity int64        `json:"quantity" form:"itemQuantity"`
+	List     ShoppingList `json:"list"`
 }
 
 type UserList struct {

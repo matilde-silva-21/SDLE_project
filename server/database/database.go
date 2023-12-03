@@ -16,7 +16,7 @@ func NewSQLiteRepository(db *sql.DB) *SQLiteRepository {
 }
 
 func (r *SQLiteRepository) CreateTables() error {
-	var models = []Model {
+	var models = []Model{
 		&ShoppingList{},
 		&Item{},
 		&User{},
@@ -35,8 +35,8 @@ func (r *SQLiteRepository) CreateTables() error {
 }
 
 func (r *SQLiteRepository) Seed() error {
-	sl1 := ShoppingList{Id: 1, Name: "Shopping List 1",  Url: "test1"}
-	
+	sl1 := ShoppingList{Id: 1, Name: "Shopping List 1", Url: "test1"}
+
 	var seedItems = []Model{
 		&sl1,
 		&Item{Id: 1, Name: "apple", Done: false, Quantity: 3, List: sl1},
@@ -54,4 +54,3 @@ func (r *SQLiteRepository) Seed() error {
 
 	return nil
 }
-

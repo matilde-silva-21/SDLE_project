@@ -20,8 +20,8 @@ type Pair[V Number] struct {
 }
 
 type LexCounter[K Ordered, V Number] struct {
-	Map  map[K]Pair[V]
-	id K
+	Map map[K]Pair[V]
+	id  K
 }
 
 func Create[K Ordered, V Number](id K) LexCounter[K, V] {
@@ -39,9 +39,9 @@ func (lexcounter LexCounter[K, V]) Inc(toSum V) {
 func (lexcounter LexCounter[K, V]) Dec(toDec V) {
 	m := lexcounter.Map
 	id := lexcounter.id
-	
+
 	m[id] = Pair[V]{First: m[id].First + 1, Second: m[id].Second - toDec}
-	
+
 }
 
 func (lexcounter LexCounter[K, V]) GetValue() V {
@@ -66,7 +66,7 @@ func Lexjoin[V Number](r, l Pair[V]) Pair[V] {
 	} else if r1 > l1 {
 		return r
 	} else if r1 == l1 {
-		res := Pair[V]{First: r1+1, Second: r2 + l2}
+		res := Pair[V]{First: r1 + 1, Second: r2 + l2}
 		return res
 	}
 
@@ -76,7 +76,7 @@ func Lexjoin[V Number](r, l Pair[V]) Pair[V] {
 
 func (lexcounter LexCounter[K, V]) Join(lexcounter1 LexCounter[K, V]) {
 	m1 := lexcounter1.Map
-	
+
 	for key, value := range m1 {
 		lexcounter.Map[key] = Lexjoin(value, lexcounter.Map[key])
 	}
