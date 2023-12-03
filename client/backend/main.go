@@ -6,12 +6,24 @@ import (
 	"log"
 	"sdle/m/v2/api"
 	"sdle/m/v2/database"
+	"sdle/m/v2/communication/communicator"
+	"sdle/m/v2/utils/messageStruct"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+
 func main() {
+
+	// Se quiser ouvir uma lista, escrevo o URl da lista que quero ouvir no canal (listsToAdd <- url) 
+	listsToAdd := make(chan string, 100)
+	
+	// Se quiser enviar uma mensagem, escrevo o messageStruct da mensagem que quero enviar no canal (messagesToSend <- messageStruct) 
+	messagesToSend := make(chan messageStruct.MessageStruct, 100)
+
+	go communicator.StartClientCommunication(listsToAdd, messagesToSend)
+
 	const filename = "local.db"
 	db, err := sql.Open("sqlite3", filename)
 
