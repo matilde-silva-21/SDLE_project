@@ -71,6 +71,8 @@ func main() {
 	//LexExample()
 	ShopListExample()
 
+	
+
 	const filename = "server.db"
 	db, err := sql.Open("sqlite3", filename)
 

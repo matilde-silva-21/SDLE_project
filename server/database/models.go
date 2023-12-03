@@ -74,7 +74,7 @@ func (item *Item) Delete(r *SQLiteRepository) error {
 
 func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 	updatedItem := updated.(*Item)
-	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.Quantity, updatedItem.List.Id&item.Id)
+	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.Quantity, updatedItem.List.Id, &item.Id)
 
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func (item *Item) ReadAll(r *SQLiteRepository) ([]Model, error) {
 
 	for rows.Next() {
 		var i Item
-		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.Quantity); err != nil {
+		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.Quantity, &i.List.Id); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)
@@ -276,7 +276,7 @@ func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 
 	for rows.Next() {
 		var l ShoppingList
-		if err := rows.Scan(&l.Id); err != nil {
+		if err := rows.Scan(&l.Id, &l.Name, &l.Url); err != nil {
 			return nil, err
 		}
 		lists = append(lists, &l)
