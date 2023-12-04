@@ -95,6 +95,25 @@ func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, outboun
 	}
 }
 
+func createTCPListener() (*net.TCPListener, error){
+
+	port := "8080" // Default orchestrator port
+	if len(os.Args) > 1 {
+		port = os.Args[1]
+	}
+
+	address := "localhost:"+port // Orchestrator address
+	
+	listener, err := tcp.CreateListenerConnection(address)
+
+	if(err != nil) {
+		return nil, err
+	}
+
+	log.Printf("[TCP] Orchestrator is listening on port %s\n\n", port)
+
+	return listener, nil
+}
 
 
 func main() {
@@ -142,26 +161,9 @@ func main() {
 
 	// <------------ Create TCP Listener For Servers To join Hash Ring ------------>
 	
-	port := "8080" // Default orchestrator port
-	if len(os.Args) > 1 {
-		port = os.Args[1]
-	}
+	listener, err := createTCPListener()
 
-	address := "localhost:"+port // Orchestrator address
-	
-	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
-	if err != nil {
-		return
-	}
-
-	listener, err := net.ListenTCP("tcp", tcpAddr)
-	if err != nil {
-        fmt.Println("Error:", err)
-        return
-    }
-    defer listener.Close()
-
-    log.Printf("[TCP] Orchestrator is listening on port %s\n\n", port)
+	if(err != nil){ return }
 
 	
 	// Loop through, waiting for connections from the server
@@ -175,6 +177,7 @@ func main() {
 		// Read the very first message that contains the Outbound IP (waits 1 second)
 		outboundIP, err := tcp.ReadMessage(conn, 1000)
 
+		// If the server sends outbound IP, connect as per usual, if not, move on
 		if (len(outboundIP) != 0 && err == nil) {
 			
 			outboundIP := string(outboundIP)
@@ -190,9 +193,15 @@ func main() {
 
 			go readTCPConnection(conn, hashRing, outboundIP, incomingMessageChannel, outgoingRabbitChannel) // Call thread to continuously poll TCP connection and outgoing messages channel 
 
+		} else {
+			conn.Close()
 		}
 
     }
 	
 	// <--------------------------------------------------------------------------->
 }
+
+// TODO ter os dois orch ligados TCP, para saber quando um deles vai abaixo.
+// quando for abaixo, nao volta a entrar em cena até o outro morrer.
+// meter talvez uma flag a indicar que se 1 conectar ao 2, entao 1 nao aceita conexoes ate a ligação falhar, vice versa.

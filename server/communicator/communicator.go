@@ -22,7 +22,8 @@ func GetOutboundIP() string {
     return localAddr
 }
 
-func connectToOrchestrator() {
+
+func connectToOrchestrator(outboundIP string) {
 
 	orchestratorAddress := "localhost:8080"
 	backupAddress := "localhost:8081"
@@ -39,8 +40,6 @@ func connectToOrchestrator() {
 		os.Exit(0)
 	}
 	
-
-
 	
 	for {
 		// Try to connect to Orchestrator, in case of failure, connect to backup orchestrator. If both connections fail, the program stops
@@ -60,7 +59,9 @@ func connectToOrchestrator() {
 		}
 	
 		defer conn.Close()
-	
+		
+		conn.Write([]byte(outboundIP))
+
 		err = listenToConnection(conn)
 	
 		if(err != nil){
@@ -97,7 +98,7 @@ func StartServerCommunication() {
 
 	// <------------ Connect To orchestrator ------------>
 	
-	go connectToOrchestrator()
+	go connectToOrchestrator(outboundIP)
 
 	// <------------------------------------------------->
 	
