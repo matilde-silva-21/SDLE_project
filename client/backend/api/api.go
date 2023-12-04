@@ -70,9 +70,13 @@ func CreateShoppingList(c *gin.Context) {
 	var userList database.UserList
 	userList.ListID = newShoppingList.Id
 	userList.UserID = username
-	userList.Create(db)
+	_, userListErr := userList.Create(db)
+	if userListErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating user list"})
+		return
+	}
 	
-	c.IndentedJSON(http.StatusOK, gin.H{"msg": "shopping list created successfully"})
+	c.IndentedJSON(http.StatusOK, newShoppingList)
 }
 
 func RemoveShoppingList(c *gin.Context) {
@@ -220,7 +224,7 @@ func AddItemToShoppingList(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"msg": "Item added to list successfully"})
+	c.IndentedJSON(http.StatusOK, item)
 }
 
 func RemoveItemFromShoppingList(c *gin.Context) {

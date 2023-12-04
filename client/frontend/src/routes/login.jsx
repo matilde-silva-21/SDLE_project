@@ -38,7 +38,7 @@ export default function LoginPage() {
 
     return (
         <>
-            <div className="container bg-red-500 0 m-2 p-2 flex flex-col align-center justify-items-center">
+            <div className="container bg-pink-100 rounded-md m-2 p-2 flex flex-col align-center justify-items-center">
                 <form className="flex flex-col gap-2 align-center justify-items-center" onSubmit={login}>
                     <label htmlFor="username">Username</label>
                     <input 
@@ -50,7 +50,7 @@ export default function LoginPage() {
                         onChange={(e) => setUsername(e.target.value)}>
                     </input>
 
-                    <button type="submit" className="bg-pink-100 rounded-md p-2">Login</button>
+                    <button type="submit" className="bg-pink-200 rounded-md p-2">Login</button>
                 </form>
             </div>
         </>

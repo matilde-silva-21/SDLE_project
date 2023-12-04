@@ -2,13 +2,11 @@ import { useState } from "react"
 import Popup from 'reactjs-popup'
 import '../styles/Modal.css'
 
-export default function Modal({ onClose }) {
+export default function Modal({ lists, setLists }) {
     const [url, setUrl] = useState("")
     const [name, setName] = useState("")
 
-    async function createList(event) {
-        //event.preventDefault()
-
+    async function createList() {
         const response = await fetch("http://localhost:8080/lists/create", {
             method: "POST",
             body: JSON.stringify({"url": url, "name": name}),
@@ -22,6 +20,9 @@ export default function Modal({ onClose }) {
 
         if (response.ok) {
             console.log("New shopping list created successfully")
+            let res = await response.json()
+            console.log(res)
+            setLists([...lists, res])
         }
     }
     

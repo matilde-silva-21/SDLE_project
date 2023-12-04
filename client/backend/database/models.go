@@ -1,5 +1,7 @@
 package database
 
+import "fmt";
+
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
 	Create(r *SQLiteRepository) (Model, error)
@@ -191,6 +193,7 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 }
 
 func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
+	fmt.Println(user.Username)
 	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
 
 	if err != nil {
@@ -326,6 +329,7 @@ func (userList *UserList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (userList *UserList) Create(r *SQLiteRepository) (Model, error) {
+	fmt.Println(userList)
 	_, err := r.db.Exec("INSERT INTO UserList(ListId, UserId) VALUES (?, ?)", &userList.ListID, &userList.UserID)
 
 	if err != nil {
