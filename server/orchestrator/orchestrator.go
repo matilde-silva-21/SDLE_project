@@ -1,4 +1,4 @@
-package orchestrator
+package main
 
 import (
 	"fmt"
@@ -26,6 +26,7 @@ func handleIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *
 		log.Printf("[RabbitMQ] Received message (url.%s): %s\n", url, msg.Body)
 
 		mutex.Lock()
+		// TODO meter uma flag para evitar fazer esta logica, se nao houver servers ligados (por causa do backup)
 
 		nodes, _ := hashRing.GetClosestNodes(url, 3)
 		var ip string
@@ -66,9 +67,7 @@ func handleOutgoingRabbitMessages(messagesToSend chan []byte, ch *amqp.Channel, 
 }
 
 
-func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, messagesToSend chan []byte, rabbitChannel chan []byte) {
-
-	ip := conn.RemoteAddr().String()
+func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, outboundIP string, messagesToSend chan []byte, rabbitChannel chan []byte) {
 
 	for {
 
@@ -76,18 +75,18 @@ func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, message
 
 			case payload := <-(messagesToSend): // When channel has a message, route it to the server
 				tcp.SendMessage(conn, string(payload))
-				log.Printf("[TCP] Sent message to %s: %s\n", ip, string(payload))
+				log.Printf("[TCP] Sent message to %s: %s\n", outboundIP, string(payload))
 
 			default:
-				message, err := tcp.ReadMessage(conn)
+				message, err := tcp.ReadMessage(conn, 1)
 		
 				if (err != nil) {
 					mutex.Lock()
-					hashRing.RemoveNodeByIP(ip)
+					hashRing.RemoveNodeByIP(outboundIP)
 					mutex.Unlock()
 					return
 				} else if (len(message) != 0) {
-					log.Printf("[TCP] Received message from %s: %s\n", ip, message)
+					log.Printf("[TCP] Received message from %s: %s\n", outboundIP, message)
 					rabbitChannel <- message
 				}
 		}
@@ -97,7 +96,7 @@ func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, message
 
 
 
-func OrchestratorExample() {
+func main() {
 
 	// <------------ Create a map with the channels corresponding to each TCP connection. The channels will share messages between threads ------------>
 
@@ -156,7 +155,7 @@ func OrchestratorExample() {
     }
     defer listener.Close()
 
-    log.Printf("[TCP] Server is listening on port 8080\n\n")
+    log.Printf("[TCP] Orchestrator is listening on port 8080\n\n")
 
 	
 	// Loop through, waiting for connections from the server
@@ -166,18 +165,27 @@ func OrchestratorExample() {
 			fmt.Println("Error:", err)
             continue
         }
+		
+		// Read the very first message that contains the Outbound IP (waits 1 second)
+		outboundIP, err := tcp.ReadMessage(conn, 1000)
 
-		ipString := conn.RemoteAddr().String()
-		
-		hashRing.Add(hashRing.GetServerName() , ipString) // Add server to hash ring
-		
-		
-		incomingMessageChannel := make(chan []byte, 100) // Create Channel for the TCP connection know which messages should be sent
-		defer close(incomingMessageChannel)
-		
-		channelsMap[ipString] = incomingMessageChannel // Add channel to channel map
+		if (len(outboundIP) != 0 && err == nil) {
+			
+			outboundIP := string(outboundIP)
 
-		go readTCPConnection(conn, hashRing, incomingMessageChannel, outgoingRabbitChannel) // Call thread to continuously poll TCP connection and outgoing messages channel 
+			hashRing.Add(hashRing.GetServerName(), outboundIP) // Add server to hash ring
+			
+			incomingMessageChannel := make(chan []byte, 100) // Create Channel for the TCP connection know which messages should be sent
+			defer close(incomingMessageChannel)
+			
+			channelsMap[outboundIP] = incomingMessageChannel // Add channel to channel map
+			
+			log.Printf("Established connection to server with outbound IP: %s", outboundIP)
+
+			go readTCPConnection(conn, hashRing, outboundIP, incomingMessageChannel, outgoingRabbitChannel) // Call thread to continuously poll TCP connection and outgoing messages channel 
+
+		}
+
     }
 	
 	// <--------------------------------------------------------------------------->
