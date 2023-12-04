@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	//"sdle/server/orchestrator"
+	////"sdle/server/orchestrator"
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
@@ -77,5 +77,5 @@ func main() {
 
 	ShopListExample()
 
-	//orchestrator.OrchestratorExample();
+	orchestrator.OrchestratorExample();
 }
