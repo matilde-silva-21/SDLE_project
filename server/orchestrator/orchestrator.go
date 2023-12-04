@@ -5,6 +5,7 @@ import (
 	"net"
 	"log"
 	"sync"
+	"os"
 	amqp "github.com/rabbitmq/amqp091-go"
 	
 	"sdle/server/orchestrator/hash"
@@ -141,7 +142,12 @@ func main() {
 
 	// <------------ Create TCP Listener For Servers To join Hash Ring ------------>
 	
-	address := "localhost:8080" // Orchestrator address
+	port := "8080" // Default orchestrator port
+	if len(os.Args) > 1 {
+		port = os.Args[1]
+	}
+
+	address := "localhost:"+port // Orchestrator address
 	
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
@@ -155,7 +161,7 @@ func main() {
     }
     defer listener.Close()
 
-    log.Printf("[TCP] Orchestrator is listening on port 8080\n\n")
+    log.Printf("[TCP] Orchestrator is listening on port %s\n\n", port)
 
 	
 	// Loop through, waiting for connections from the server

@@ -4,6 +4,7 @@ import (
 	"net"
 	"log"
 	"fmt"
+	"os"
 	//"sdle/server/utils/messageStruct"
 )
 
@@ -21,7 +22,7 @@ func GetOutboundIP() string {
     return localAddr
 }
 
-func connectToOrchestrator() (*net.TCPConn, error){
+func connectToOrchestrator() {
 
 	orchestratorAddress := "localhost:8080"
 	backupAddress := "localhost:8081"
@@ -29,32 +30,48 @@ func connectToOrchestrator() (*net.TCPConn, error){
 	orchTcpAddr, err := net.ResolveTCPAddr("tcp", orchestratorAddress)
 
 	if err != nil {
-		return nil, err
+		os.Exit(0)
 	}
 
 	backupTcpAddr, err := net.ResolveTCPAddr("tcp", backupAddress)
 	
 	if err != nil {
-		return nil, err
+		os.Exit(0)
 	}
 	
 
-	// Try to connect to Orchestrator, in case of failure, connect to backup orchestrator. If both connections fail, the program stops
-	conn, err := net.DialTCP("tcp", nil, orchTcpAddr)
-	if err != nil {
-		log.Printf("Failed to connect to orchestrator. Trying to talk to backup.\n")
-		conn, err = net.DialTCP("tcp", nil, backupTcpAddr)
-		if err != nil {
-			log.Printf("Failed to connect to backup. Shutting off...\n")
-			return nil, err
-		}
-	}
 
-	return conn, nil
+	
+	for {
+		// Try to connect to Orchestrator, in case of failure, connect to backup orchestrator. If both connections fail, the program stops
+		connOrchestrator, err1 := net.DialTCP("tcp", nil, orchTcpAddr)
+		connBackup, err2 := net.DialTCP("tcp", nil, backupTcpAddr)
+
+		conn := connOrchestrator
+
+		if err1 != nil {
+			log.Printf("Failed to connect to orchestrator. Connecting to backup.\n")
+
+			if err2 != nil {
+				log.Printf("Failed to connect to backup. Shutting off...\n")
+				os.Exit(0)
+			}
+			conn = connBackup
+		}
+	
+		defer conn.Close()
+	
+		err = listenToConnection(conn)
+	
+		if(err != nil){
+			log.Printf("Orchestrator connection unexpectedly shut down. Trying to reconnect.\n")
+		}
+	
+	}
 
 }
 
-func listenToConnection(conn *net.TCPConn) {
+func listenToConnection(conn *net.TCPConn) error {
 
 	for {
 
@@ -63,8 +80,8 @@ func listenToConnection(conn *net.TCPConn) {
 
 		if err != nil {
 
-			log.Print("Error reading message: ", err)
-			return
+			log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
+			return err
 		}
 
 		log.Print(string(buffer[:n]))
@@ -77,21 +94,10 @@ func StartServerCommunication() {
 
 	
 	outboundIP := GetOutboundIP()
-	fmt.Println(outboundIP)
 
 	// <------------ Connect To orchestrator ------------>
 	
-	orchestrator, err := connectToOrchestrator()
-	
-	if err != nil {
-		return
-	}
-	
-	defer orchestrator.Close()
-	
-	orchestrator.Write([]byte(outboundIP))
-	
-	go listenToConnection(orchestrator)
+	go connectToOrchestrator()
 
 	// <------------------------------------------------->
 	
@@ -123,5 +129,6 @@ func StartServerCommunication() {
 		go listenToConnection(conn)
 	}
 
+	// TODO quando orchestrator morrer, conectar ao backup
 
 }
