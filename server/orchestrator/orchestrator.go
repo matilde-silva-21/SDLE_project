@@ -27,7 +27,6 @@ func handleIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *
 		log.Printf("[RabbitMQ] Received message (url.%s): %s\n", url, msg.Body)
 
 		mutex.Lock()
-		// TODO meter uma flag para evitar fazer esta logica, se nao houver servers ligados (por causa do backup)
 
 		nodes, _ := hashRing.GetClosestNodes(url, 3)
 		var ip string
@@ -116,7 +115,54 @@ func createTCPListener() (*net.TCPListener, error){
 }
 
 
+func waitToStartOperation() *net.TCPAddr{
+
+	port := "8080" // Default orchestrator port
+	otherOrchestratorPort := "8081"
+
+	if len(os.Args) > 1 {
+		port = os.Args[1]
+		if(port == "8081"){
+			otherOrchestratorPort = "8080"
+		}
+	}
+
+	tcpAddr, err := net.ResolveTCPAddr("tcp", "localhost:"+otherOrchestratorPort)
+
+	if err != nil {
+		log.Printf("Couldn't resolve other orchestrator's TCP address. Starting Services...\n")
+	} else {
+		connOrchestrator, err := net.DialTCP("tcp", nil, tcpAddr)
+
+		if err != nil {
+			log.Printf("Couldn't connect to other orchestrator's TCP address. Starting Services...\n")
+		} else {
+			// Wait until the connection is broken to start services
+			log.Printf("Waiting for other orchestrator to fail, to begin services.\n")
+			for {
+				_, err := tcp.ReadMessage(connOrchestrator, 1)
+	
+				if (err != nil) {
+					log.Printf("Orchestrator failed. Starting Services...\n")
+					break
+				}
+			}
+		}
+
+	}
+
+	return tcpAddr
+
+}
+
 func main() {
+
+	// <----------------------- Check if another orchestrator is already operating, if so, do nothing. ----------------------->
+
+	tcpAddr := waitToStartOperation()
+
+	// <-------------------------------------------------------------------------------------------------->
+		
 
 	// <------------ Create a map with the channels corresponding to each TCP connection. The channels will share messages between threads ------------>
 
@@ -176,6 +222,7 @@ func main() {
 		
 		// Read the very first message that contains the Outbound IP (waits 1 second)
 		outboundIP, err := tcp.ReadMessage(conn, 1000)
+		connIP := (conn.RemoteAddr().(*net.TCPAddr)).IP
 
 		// If the server sends outbound IP, connect as per usual, if not, move on
 		if (len(outboundIP) != 0 && err == nil) {
@@ -193,6 +240,9 @@ func main() {
 
 			go readTCPConnection(conn, hashRing, outboundIP, incomingMessageChannel, outgoingRabbitChannel) // Call thread to continuously poll TCP connection and outgoing messages channel 
 
+		} else if (tcpAddr.IP.Equal(connIP)){
+			log.Print("Backup Orchestrator is Online\n")
+			go tcp.KeepConnectionAlive(conn)
 		} else {
 			conn.Close()
 		}
@@ -202,6 +252,4 @@ func main() {
 	// <--------------------------------------------------------------------------->
 }
 
-// TODO ter os dois orch ligados TCP, para saber quando um deles vai abaixo.
-// quando for abaixo, nao volta a entrar em cena até o outro morrer.
-// meter talvez uma flag a indicar que se 1 conectar ao 2, entao 1 nao aceita conexoes ate a ligação falhar, vice versa.
+// TODO maybe ter os serviços do backup ja online para diminuir a latencia entre o tempo de transiçao do orchestrator para o backup.

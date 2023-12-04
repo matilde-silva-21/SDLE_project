@@ -52,8 +52,8 @@ func connectToOrchestrator(outboundIP string) {
 			log.Printf("Failed to connect to orchestrator. Connecting to backup.\n")
 
 			if err2 != nil {
-				log.Printf("Failed to connect to backup. Shutting off...\n")
-				os.Exit(0)
+				log.Printf("Failed to connect to backup. Re-trying\n")
+				continue
 			}
 			conn = connBackup
 		}

@@ -57,6 +57,12 @@ func SendMessage(conn *net.TCPConn, message string) {
 	}
 }
 
+func KeepConnectionAlive(conn *net.TCPConn) {
+	for {
+		
+	}
+}
+
 // ReadMessage reads a message from the TCP connection (non-blocking read).
 func ReadMessage(conn *net.TCPConn, numberOfMilliseconds int) ([]byte, error) {
 	buffer := make([]byte, 1024)
@@ -74,7 +80,7 @@ func ReadMessage(conn *net.TCPConn, numberOfMilliseconds int) ([]byte, error) {
 		}
 
 		if err.Error() == "EOF" {
-			log.Println("Connection closed by remote side.")
+			log.Printf("Connection %s closed by remote side.", conn.RemoteAddr().String())
 		} else {
 			log.Print("Error reading message: ", err)
 		}
