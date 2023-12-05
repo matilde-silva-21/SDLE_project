@@ -13,6 +13,8 @@ type ShoppingList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name" form:"listName"`
 	Url  string `json:"url" uri:"url" form:"listUrl"`
+	List string
+	State string
 }
 
 type User struct {
@@ -205,7 +207,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 	for rows.Next() {
 		var ul ShoppingList
 
-		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url); scanErr != nil {
+		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url, &ul.List, &ul.State); scanErr != nil {
 			return nil, scanErr
 		}
 
@@ -219,7 +221,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 
 func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE)")
+	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List String, State String)")
 
 	if err != nil {
 		return err
@@ -228,7 +230,7 @@ func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url) VALUES (?, ?)", &list.Name, &list.Url)
+	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url, List, State) VALUES (?, ?, ?, ?)", &list.Name, &list.Url, &list.list, &list.state)
 
 	if err != nil {
 		return nil, err
@@ -249,6 +251,19 @@ func (list *ShoppingList) Delete(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
+	updatedList := updated.(*ShoppingList)
+	res, err := r.db.Exec("UPDATE shopping_lists SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, item.Id)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil || rows == 0 {
+		return err
+	}
+
 	return nil
 }
 
@@ -256,7 +271,7 @@ func (list *ShoppingList) Read(r *SQLiteRepository) (Model, error) {
 	res := r.db.QueryRow("SELECT * FROM ShoppingList WHERE Url = ?", &list.Url)
 
 	var updated ShoppingList
-	if err := res.Scan(&updated.Id, &updated.Name, &updated.Url); err != nil {
+	if err := res.Scan(&updated.Id, &updated.Name, &updated.Url, &updated.List, &updated.State); err != nil {
 		return nil, err
 	}
 
@@ -276,7 +291,7 @@ func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 
 	for rows.Next() {
 		var l ShoppingList
-		if err := rows.Scan(&l.Id, &l.Name, &l.Url); err != nil {
+		if err := rows.Scan(&l.Id, &l.Name, &l.Url, &l.List, &l.State); err != nil {
 			return nil, err
 		}
 		lists = append(lists, &l)
