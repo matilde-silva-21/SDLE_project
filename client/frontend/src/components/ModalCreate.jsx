@@ -2,7 +2,7 @@ import { useState } from "react"
 import Popup from 'reactjs-popup'
 import '../styles/Modal.css'
 
-export default function Modal({ lists, setLists }) {
+export default function ModalCreate({ lists, setLists }) {
     const [url, setUrl] = useState("")
     const [name, setName] = useState("")
 
@@ -28,7 +28,7 @@ export default function Modal({ lists, setLists }) {
     
     return (        
           <Popup
-            trigger={<button className="button bg-pink-200 p-2 rounded-md w-full"> Add List </button>}
+            trigger={<button className="button bg-pink-200 p-2 rounded-md w-full"> Create List </button>}
             modal
             nested
           >
@@ -37,7 +37,7 @@ export default function Modal({ lists, setLists }) {
                 <button className="close" onClick={close}>
                   &times;
                 </button>
-                <div className="header">Add List</div>
+                <div className="header">Create List</div>
                 <div className="content">
                     <div className="flex">
                         <form className="flex flex-col gap-2 justify-center align-middle">
@@ -57,7 +57,7 @@ export default function Modal({ lists, setLists }) {
                       close();
                     }}
                   >
-                    Add List
+                    Create List
                   </button>
                 </div>
               </div>

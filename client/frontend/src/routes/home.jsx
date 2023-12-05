@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import logoImage from '../images/logo192.png';
-import Modal from '../components/Modal';
+import ModalCreate from '../components/ModalCreate';
+import ModalAdd from '../components/ModalAdd';
 
 export default function HomePage() {
   const [listOfLists, setlistOfLists] = useState([]);
@@ -134,8 +135,9 @@ export default function HomePage() {
                       </div>
                 ))}
               </div>
-              <div className='flex mb-3 justify-center'>
-                <Modal lists={listOfLists} setLists={setlistOfLists} className="button-list"/>
+              <div className='flex mb-3 justify-center flex-col gap-2'>
+                <ModalAdd lists={listOfLists} setLists={setlistOfLists} />
+                <ModalCreate lists={listOfLists} setLists={setlistOfLists} />
               </div>
             </div>
           </div>
