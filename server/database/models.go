@@ -207,7 +207,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 	for rows.Next() {
 		var ul ShoppingList
 
-		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url, &ul.List, &ul.State); scanErr != nil {
+		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url); scanErr != nil {
 			return nil, scanErr
 		}
 
@@ -252,7 +252,7 @@ func (list *ShoppingList) Delete(r *SQLiteRepository) error {
 
 func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
 	updatedList := updated.(*ShoppingList)
-	res, err := r.db.Exec("UPDATE shopping_lists SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
+	res, err := r.db.Exec("UPDATE ShoppingList SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
 
 	if err != nil {
 		return err

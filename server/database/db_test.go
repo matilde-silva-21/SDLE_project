@@ -28,6 +28,8 @@ func TestShoppingListModel(t *testing.T) {
 	newList := &ShoppingList{
 		Name: "TestList",
 		Url:  "test-url",
+		List: "test-list",
+		State: "test-state",
 	}
 
 	// Test CreateTable
@@ -49,15 +51,17 @@ func TestShoppingListModel(t *testing.T) {
 	}
 
 	// Compare the created list with the read list
-	if readList.(*ShoppingList).Name != newList.Name || readList.(*ShoppingList).Url != newList.Url {
+	if readList.(*ShoppingList).Name != newList.Name || readList.(*ShoppingList).Url != newList.Url || readList.(*ShoppingList).List != newList.List || readList.(*ShoppingList).State != newList.State{
 		t.Errorf("Read result does not match the created ShoppingList")
 	}
 
 	// Test Update
 	updatedList := &ShoppingList{
 		Id:   readList.(*ShoppingList).Id,
-		Name: "UpdatedTestList",
-		Url:  "updated-url",
+		Name: "TestList",
+		Url:  "test-url",
+		List: "updated-list",
+		State: "updated-state",
 	}
 
 	updateErr := updatedList.Update(sqliteRepository, updatedList)
@@ -122,6 +126,8 @@ func TestGetShoppingListItems(t *testing.T) {
 	newList := &ShoppingList{
 		Name: "TestList",
 		Url:  "test-url",
+		List: "test-list",
+		State: "test-state",
 	}
 
 	// Test CreateTable
@@ -244,6 +250,8 @@ func TestUserModel(t *testing.T) {
 	newList := &ShoppingList{
 		Name: "TestList",
 		Url:  "test-url",
+		List: "test-list",
+		State: "test-state",
 	}
 
 	// Test CreateTable
@@ -339,6 +347,8 @@ func TestItemMethods(t *testing.T) {
 		List: ShoppingList{
 			Name: "TestList",
 			Url:  "test-url",
+			List: "test-list",
+			State: "test-state",
 		},
 	}
 
@@ -453,6 +463,8 @@ func TestUserListMethods(t *testing.T) {
 	shoppingList := &ShoppingList{
 		Name: "TestList",
 		Url:  "test-url",
+		List: "test-list",
+		State: "test-state",
 	}
 
 	// Test CreateTable
