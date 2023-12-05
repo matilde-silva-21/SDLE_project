@@ -96,8 +96,6 @@ func (list ShoppingList) AddItem(item string, quantity int) bool {
 // Returns false if item doesn't exist or if item already bought. Returns true if alteration was succesful
 func (list ShoppingList) BuyItem(item string) bool {
 	
-	item = StringStandardizer.StandardizeString(item)
-
 	_, keyExists1 := list.list.Map[item]
 	_, keyExists2 := list.state.Map[item]
 	
@@ -117,8 +115,6 @@ func (list ShoppingList) BuyItem(item string) bool {
 // Returns false if item is already bought or item doesn't exist. Returns true if alteration was succesful
 func (list ShoppingList) AlterItemQuantity(item string, newQuantity int) bool {
 	
-	item = StringStandardizer.StandardizeString(item)
-
 	_, keyExists := list.list.Map[item]
 	
 	if ((list.state.Map[item].Second >= 1) || !keyExists){
@@ -153,8 +149,6 @@ func (list ShoppingList) AlterItemQuantity(item string, newQuantity int) bool {
 // Returns false if item doesn't exist. Returns true if deletion was succesful
 func (list ShoppingList) DeleteItem(item string) bool{
 	
-	item = StringStandardizer.StandardizeString(item)
-
 	_, keyExists := list.list.Map[item]
 	
 	if (!keyExists){
@@ -170,8 +164,6 @@ func (list ShoppingList) DeleteItem(item string) bool{
 // Return false if item not bought or if item doesnt exist. Return true if item bought
 func (list ShoppingList) CheckIfItemBought(item string) bool{
 	
-	item = StringStandardizer.StandardizeString(item)
-
 	val, keyExists := list.state.Map[item]
 	
 	if(keyExists){
@@ -184,8 +176,6 @@ func (list ShoppingList) CheckIfItemBought(item string) bool{
 // Return -1 if item doesn't exist. Returns item quantity if item exists (doesnt matter if bought or not). 
 func (list ShoppingList) CheckItemQuantity(item string) int {
 	
-	item = StringStandardizer.StandardizeString(item)
-
 	entry, keyExists := list.list.Map[item]
 	
 	if (!keyExists) {

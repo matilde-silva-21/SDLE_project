@@ -1,6 +1,8 @@
 package database
 
-import "fmt";
+import (
+	"fmt"	
+);
 
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
@@ -15,6 +17,8 @@ type ShoppingList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name" form:"listName"`
 	Url  string `json:"url" uri:"url" form:"listUrl"`
+	list string
+	state string
 }
 
 type User struct {
