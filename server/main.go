@@ -62,7 +62,7 @@ func ShopListExample() {
 	fmt.Println(shopList1.JSON())
 	fmt.Println("\n")
 
-	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Add)
+	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Write)
 
 	fmt.Println("\n", string(messageFormat))
 

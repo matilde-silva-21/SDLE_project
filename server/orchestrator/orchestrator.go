@@ -28,20 +28,8 @@ func handleIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *
 
 		mutex.Lock()
 
-		nodes, _ := hashRing.GetClosestNodes(url, 3)
-		var ip string
-		ipList := []string{}
+		ipList, _ := hashRing.GetClosestNodesIP(url, -1) // -1 because I want all nodes
 
-		for _, elem := range(nodes){
-
-			if node, ok := elem.(string); ok {
-				ip = hashRing.GetServerIP(node)
-				ipList = append(ipList, ip)
-			} else {
-				log.Print("Unexpected type for nodes key.")
-			}
-		}
-		
 		(*TCPchannels)[ipList[0]]<-((messageObject).BuildMessageForServer(ipList)) // Send message body to TCP
 		
 		mutex.Unlock()
