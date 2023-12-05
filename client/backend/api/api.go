@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
 
@@ -60,6 +61,7 @@ func CreateShoppingList(c *gin.Context) {
 	newShoppingListModel, createErr := shoppingList.Create(db)
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
+		fmt.Println(createErr.Error())
 		return
 	}
 
@@ -68,9 +70,13 @@ func CreateShoppingList(c *gin.Context) {
 	var userList database.UserList
 	userList.ListID = newShoppingList.Id
 	userList.UserID = username
-	userList.Create(db)
+	_, userListErr := userList.Create(db)
+	if userListErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating user list"})
+		return
+	}
 	
-	c.IndentedJSON(http.StatusOK, gin.H{"msg": "shopping list created successfully"})
+	c.IndentedJSON(http.StatusOK, newShoppingList)
 }
 
 func RemoveShoppingList(c *gin.Context) {
@@ -87,12 +93,6 @@ func RemoveShoppingList(c *gin.Context) {
 
 	shoppingListModel, _ := shoppingList.Read(db)
 	shoppingListObj := shoppingListModel.(*database.ShoppingList)
-
-	deleteErr := shoppingListObj.Delete(db)
-	if deleteErr != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error deleting shopping list"})
-		return
-	}
 
 	username, cookieErr := getUsernameFromCookie(c)
 	if cookieErr != nil {
@@ -218,7 +218,7 @@ func AddItemToShoppingList(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"msg": "Item added to list successfully"})
+	c.IndentedJSON(http.StatusOK, item)
 }
 
 func RemoveItemFromShoppingList(c *gin.Context) {
@@ -245,7 +245,7 @@ func RemoveItemFromShoppingList(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	if isLoggedIn(c) {
-		c.Redirect(http.StatusFound, "/lists")
+		c.IndentedJSON(http.StatusOK, "")
 		return
 	}
 
