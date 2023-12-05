@@ -89,7 +89,41 @@ func listenToOrchestrator(conn *net.TCPConn) error {
 		IPs, payload := messageStruct.ReadServerMessage(buffer[:n])
 		log.Print(IPs, payload)
 		
-		// go StartQuorumConnection()
+		go StartQuorumConnection(IPs)
+	}
+
+}
+
+func StartQuorumConnection(IPs []string){
+
+	minNumConn := (len(IPs) - len(IPs)%2) + 1
+	activeConn := 0
+
+	connections := [](*net.TCPConn){}
+
+	for _, ip := range IPs {
+		tcpAddr, err := net.ResolveTCPAddr("tcp", ip)
+		conn, err := net.DialTCP("tcp", nil, tcpAddr)
+
+		if err != nil {
+			log.Printf("Failed to connect to server with IP %s.\n", ip)
+			continue
+		}
+		fmt.Println("\nI connected bro i swear\n")
+		defer conn.Close()
+		connections = append(connections, conn)
+		activeConn += 1
+
+		go listenToConnection(conn)
+
+		if (minNumConn <= activeConn) { break }
+
+	}
+	fmt.Println(connections)
+
+	// Keep function running until quorum is over or else the connections break down (calling a thread2 inside a thread1 -> thread2 terminates when thread1 terminates)
+	for {
+		
 	}
 
 }
@@ -148,7 +182,9 @@ func StartServerCommunication() {
 			fmt.Println("Error:", err)
             continue
         }
-
+		fmt.Println("\nTHERES SOMEONE AT THE DOOR\n")
+		
+		defer conn.Close()
 		go listenToConnection(conn)
 	}
 
