@@ -24,7 +24,10 @@ type MessageStruct struct {
 	Body string
 }
 
-
+type ServerMessageStruct struct {
+	IPs []string
+	Payload MessageStruct
+}
 
 func CreateMessage(url, username string, action MessageType, CRDT string) MessageStruct {
 
@@ -66,6 +69,20 @@ func (message MessageStruct) BuildMessageForServer(IPaddresses []string) []byte{
 	return []byte(fmt.Sprintf("{%s, \"Payload\":%s}", IPstrings, payload))
 }
 
+
+func ReadServerMessage(body []byte) ([]string, MessageStruct){
+
+	var serverMessageObject ServerMessageStruct
+	
+	err := json.Unmarshal(body, &serverMessageObject)
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy MessageStruct
+		return []string{}, dummy
+	}
+
+	return serverMessageObject.IPs, serverMessageObject.Payload
+}
 /*
 
 
@@ -83,7 +100,7 @@ mensagem base - o orchestrator recebe sempre a mensagem assim (as mensagens dos 
 mensagem que os servidores recebem - o payload é a mensagem base, os IPs são os servidores com quem falar para fazer quorum
 
 {
-	"IP": ["0.0.0.0:0000", "0.0.0.0:0000"],
+	"IPs": ["0.0.0.0:0000", "0.0.0.0:0000"],
 	"Payload":
 	{
 		"ListURL": "123",

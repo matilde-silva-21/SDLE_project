@@ -239,5 +239,3 @@ func main() {
 	
 	// <--------------------------------------------------------------------------->
 }
-
-// TODO maybe ter os serviços do backup ja online para diminuir a latencia entre o tempo de transiçao do orchestrator para o backup.

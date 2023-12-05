@@ -6,7 +6,7 @@ import (
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
-	"sdle/server/communicator"
+	"sdle/server/serverCommunicator"
 )
 
 func LexExample(){
@@ -80,5 +80,5 @@ func main() {
 
 	//orchestrator.OrchestratorExample()
 
-	communicator.StartServerCommunication()
+	serverCommunicator.StartServerCommunication()
 }

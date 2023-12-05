@@ -40,7 +40,7 @@ func rabbit() {
 	failOnError(err, "Failed to declare an exchange")
 
 	// Create String to match  
-	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Create, "CRDT").ToJSON()
+	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Write, "CRDT").ToJSON()
 
 
 	err = ch.Publish(
@@ -81,7 +81,7 @@ func main(){
 
 	go rabbitmq.PrintIncomingMessages(messages)
 
-	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Create, "CRDT").ToJSON()
+	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Write, "CRDT").ToJSON()
 	
 
 	for {

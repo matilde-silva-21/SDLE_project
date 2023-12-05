@@ -1,11 +1,12 @@
-package communicator
+package serverCommunicator
 
 import (
 	"net"
 	"log"
 	"fmt"
 	"os"
-	//"sdle/server/utils/messageStruct"
+	"sdle/server/utils/messageStruct"
+	//"sdle/server/utils/CRDT/shoppingList"
 )
 
 
@@ -62,12 +63,33 @@ func connectToOrchestrator(outboundIP string) {
 		
 		conn.Write([]byte(outboundIP))
 
-		err = listenToConnection(conn)
+		err = listenToOrchestrator(conn)
 	
 		if(err != nil){
 			log.Printf("Orchestrator connection unexpectedly shut down. Trying to reconnect.\n")
 		}
 	
+	}
+
+}
+
+func listenToOrchestrator(conn *net.TCPConn) error {
+
+	for {
+
+		buffer := make([]byte, 1024)
+		n, err := conn.Read(buffer)
+
+		if err != nil {
+
+			log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
+			return err
+		}
+
+		IPs, payload := messageStruct.ReadServerMessage(buffer[:n])
+		log.Print(IPs, payload)
+		
+		// go StartQuorumConnection()
 	}
 
 }
