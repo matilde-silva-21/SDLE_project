@@ -110,14 +110,15 @@ export default function HomePage() {
 
   return (
     <div className='h-screen'>
-      <div className='grid grid-cols-[23%_auto] grid-rows-[15%_auto] grid-flow-row h-full'>
+      <div className='grid grid-cols-[25%_auto] grid-rows-[15%_auto] grid-flow-row h-full'>
+      <div className="col-span-2 col-start-2 row-start-1 border-l border-black h-full"></div>
         <div className='row-span-1 col-span-1 col-start-1 row-start-1'>
             <div className='flex flex-row mt-2'>
               <img src={logoImage} alt="Logo image" className="w-12 h-12 ml-3" />
               <h1 className="text-2xl font-semibold ml-2 p-3">List Llama</h1>
             </div>
         </div>
-        <div className='col-span-1 col-start-1 row-start-2 mb-2 ml-3'>
+        <div className='col-span-1 col-start-1 row-start-2 mb-2 ml-3 mr-3'>
           <div className="flex flex-col justify-evenly h-full">
             <h2 className="flex font-semibold">My Lists</h2>
             <div className='flex flex-col justify-between h-full'>
@@ -140,12 +141,13 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className='col-start-2 col-span-2 row-start-2'>
+        <div className="col-span-2 col-start-2 row-start-2 border-l border-black h-full"></div>
+        <div className='col-start-2 col-span-2 row-start-1 mt-10'>
           <div className='flex justify-center'>
               <div className="flex flex-col justify-center gap-2">
                 {actualList && (
                   <>
-                    <h1 className="font-semibold flex justify-center">{actualList.name}</h1>
+                    <h1 className="font-semibold flex justify-center mb-10 text-xl">{actualList.name}</h1>
                     <ul className='flex flex-col gap-2'>
                       {
                         actualList.items ? 
