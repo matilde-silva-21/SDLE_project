@@ -230,7 +230,7 @@ func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url, List, State) VALUES (?, ?, ?, ?)", &list.Name, &list.Url, &list.list, &list.state)
+	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url, List, State) VALUES (?, ?, ?, ?)", &list.Name, &list.Url, &list.List, &list.State)
 
 	if err != nil {
 		return nil, err
@@ -252,7 +252,7 @@ func (list *ShoppingList) Delete(r *SQLiteRepository) error {
 
 func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
 	updatedList := updated.(*ShoppingList)
-	res, err := r.db.Exec("UPDATE shopping_lists SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, item.Id)
+	res, err := r.db.Exec("UPDATE shopping_lists SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
 
 	if err != nil {
 		return err

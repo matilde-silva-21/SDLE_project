@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sdle/server/database"
 	"database/sql"
 	"fmt"
 	"log"
@@ -45,24 +46,20 @@ func ShopListExample() {
 
 	fmt.Println("\nShop List 1")
 	fmt.Println(shopList1.JSON())
-	fmt.Println("\n")
 
 	fmt.Println("\nShop List 2")
 	fmt.Println(shopList2.JSON())
-	fmt.Println("\n")
 
 
 	shopList1.JoinShoppingList(shopList2)
 
 	fmt.Println("\nShop List 1 after merging with Shop List 2")
 	fmt.Println(shopList1.JSON())
-	fmt.Println("\n")
 
 	shopList1.JoinShoppingList(shopList2)
 
 	fmt.Println("\nShop List 1 after merging with Shop List 2 (again)")
 	fmt.Println(shopList1.JSON())
-	fmt.Println("\n")
 
 	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Add)
 
