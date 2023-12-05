@@ -2,10 +2,11 @@ package shoppingList
 
 import (
 	"fmt"
-	LexCounter "sdle/server/CRDT/lexCounter"
+	LexCounter "sdle/server/utils/CRDT/lexCounter"
 	StringStandardizer "sdle/server/utils/stringStandardizer"
-
+	"sdle/server/utils/messageStruct"
 	"github.com/google/uuid"
+	"encoding/json"
 )
 
 type ShoppingList struct {
@@ -25,6 +26,41 @@ func Create(listName string) ShoppingList {
 
 	return ShoppingList{url: u.String(), name: listName, list: list, state: state}
 }
+
+
+func createFromArguments(listName string, url string, list, state LexCounter.LexCounter[string, int]) ShoppingList {
+
+	(&list).SetID("list")
+	(&state).SetID("state")
+
+	return ShoppingList{url: url, name: listName, list: list, state: state}
+}
+
+
+func CreateFromStrings(listName, url, list, state string) ShoppingList {
+
+	listObject := LexCounter.Create[string, int]("list")
+	stateObject := LexCounter.Create[string, int]("state")
+
+	err := json.Unmarshal([]byte(list), &listObject)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var fake ShoppingList
+		return fake
+	}
+
+	err = json.Unmarshal([]byte(state), &stateObject)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var fake ShoppingList
+		return fake
+	}
+
+	return ShoppingList{url: url, name: listName, list: listObject, state: stateObject}
+}
+
 
 func (list ShoppingList) GetURL() string {
 	return list.url
@@ -176,7 +212,7 @@ func (list ShoppingList) JSON() string {
 		bought = list.CheckIfItemBought(key)
 		quantity := list.CheckItemQuantity(key)
 
-		result += fmt.Sprintf("{item: \"%s\", quantity: %d, bought: %t}", key, quantity, bought)
+		result += fmt.Sprintf( "{\"item\": \"%s\", \"quantity\": %d, \"bought\": %t}", key, quantity, bought)
 
 	}
 
@@ -185,8 +221,9 @@ func (list ShoppingList) JSON() string {
 	return result
 }
 
-func (list1 ShoppingList) JoinShoppingListHelper(list2 ShoppingList, item2 string) (int, int) {
 
+func (list1 ShoppingList) joinShoppingListHelper(list2 ShoppingList, item2 string) (int, int) {
+	
 	decreaseQuantityValue := 0
 	decreaseStateValue := 0
 
@@ -238,7 +275,7 @@ func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
 		pr, keyExists := list1.list.Map[key]
 		if keyExists && value.First == pr.First {
 
-			decreaseQuantityValue, decreaseStateValue := list1.JoinShoppingListHelper(list2, key)
+			decreaseQuantityValue, decreaseStateValue := list1.joinShoppingListHelper(list2, key)
 
 			quantityMap[key] = decreaseQuantityValue
 			stateMap[key] = decreaseStateValue
@@ -269,5 +306,84 @@ func (list1 ShoppingList) JoinShoppingList(list2 ShoppingList) {
 		list1.state.Join(stateObj)
 
 	}
+
+}
+
+
+func (list ShoppingList) ListFormatForDatabase() string{
+	jsonList, err := json.Marshal(list.list)
+	
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy string
+		return dummy
+	}
+	
+	return string(jsonList)
+}
+
+func (list ShoppingList) StateFormatForDatabase() string{
+	jsonState, err := json.Marshal(list.state)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy string
+		return dummy
+	}
+
+	return string(jsonState)
+}
+
+
+func (list ShoppingList) ConvertToMessageFormat(username string, action messageStruct.MessageType) []byte{
+
+	jsonList, err := json.Marshal(list.list)
+	
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy []byte
+		return dummy
+	}
+	
+	jsonState, err := json.Marshal(list.state)
+
+	if(err != nil){
+		fmt.Println("Error:", err)
+		var dummy []byte
+		return dummy
+	}
+	
+	body := fmt.Sprintf(`{"Name":"%s", "List":%s, "State":%s}`, list.name, jsonList, jsonState)
+
+	return messageStruct.CreateMessage(list.url, username, action, body).ToJSON()
+
+}
+
+func MessageFormatToCRDT(body []byte) ShoppingList{
+
+	type dummyStruct struct {
+		Name string
+		List LexCounter.LexCounter[string, int]
+		State LexCounter.LexCounter[string, int]
+	}
+
+	var dummyVar dummyStruct
+	var fake ShoppingList
+
+	mess, err := messageStruct.JSONToMessage(body)
+
+	if(err != nil){
+		fmt.Println("Error 1:", err)
+		return fake
+	}
+
+	err = json.Unmarshal([]byte(mess.Body), &dummyVar)
+
+	if(err != nil){
+		fmt.Println("Error 2:", err)
+		return fake
+	}
+
+	return createFromArguments(mess.ListURL, dummyVar.Name, dummyVar.List, dummyVar.State)
 
 }
