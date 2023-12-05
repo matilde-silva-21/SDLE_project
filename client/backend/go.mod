@@ -6,6 +6,7 @@ require (
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/mattn/go-sqlite3 v1.14.18
+	github.com/rabbitmq/amqp091-go v1.9.0
 )
 
 require (
@@ -50,7 +51,6 @@ require (
 )
 
 require (
-	github.com/rabbitmq/amqp091-go v1.9.0 // indirect
 	github.com/streadway/amqp v1.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

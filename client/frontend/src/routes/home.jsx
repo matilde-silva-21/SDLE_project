@@ -8,8 +8,6 @@ export default function HomePage() {
 
   const [actualList, setActualList] = useState(null);
 
-  const [selectedItems, setSelectedItems] = useState([]);
-
   const [item, setItem] = useState("")
 
   const addNewItem = async (list) => {
@@ -83,14 +81,6 @@ export default function HomePage() {
     setActualList(null)
   };
 
-  const toggleItemSelection = (index) => {
-    if (selectedItems.includes(index)) {
-      setSelectedItems(selectedItems.filter((i) => i !== index));
-    } else {
-      setSelectedItems([...selectedItems, index]);
-    }
-  };
-
   useEffect(() => {
     getLists()
   }, [])
@@ -108,6 +98,15 @@ export default function HomePage() {
     if (lists != null) 
       setlistOfLists(lists)
   }
+
+  const handleCheckboxChange = (index) => {
+    const updatedItems = [...actualList.items];
+    updatedItems[index].done = !updatedItems[index].done;
+    setActualList({
+      ...actualList,
+      items: updatedItems,
+    });
+  };  
 
   return (
     <div className='h-screen'>
@@ -151,19 +150,25 @@ export default function HomePage() {
                   <>
                     <h1 className="font-semibold flex justify-center mb-10 text-xl">{actualList.name}</h1>
                     <ul className='flex flex-col gap-2'>
-                      {
-                        actualList.items ? 
-                          actualList.items.map((item, index) => (
-                            <li
-                              key={index}
-                              className={`flex flex-row justify-between ${selectedItems.includes(index) ? 'line-through' : ''}`}
-                              onClick={() => toggleItemSelection(index)}
-                            >
-                              <input type="checkbox" value={item.done}/> {item.name}
-                              <button className='flex bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button>
-                            </li>
-                          ))
-                        : <></>}
+                    {actualList.items ? 
+                      actualList.items.map((item, index) => {
+                        console.log(item);
+                        return (
+                          <li
+                            key={item.id ?? index}
+                            className={`flex flex-row justify-between ${item.done ? 'line-through' : ''}`}
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={item.done}
+                              onChange={() => handleCheckboxChange(index)}
+                            /> 
+                            {item.name}
+                            <button className='flex bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button>
+                          </li>
+                        );
+                      })
+                    : <></>}
                     </ul>
                   </>
                 )}
