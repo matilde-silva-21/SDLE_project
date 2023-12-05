@@ -130,6 +130,4 @@ func StartServerCommunication() {
 		go listenToConnection(conn)
 	}
 
-	// TODO quando orchestrator morrer, conectar ao backup
-
 }
