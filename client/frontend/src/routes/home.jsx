@@ -159,17 +159,23 @@ export default function HomePage() {
                       <span className='grid font-bold justify-center'>Quantity</span>
                       <span className='grid font-bold justify-center'>Action</span>
                     </div>
-                      {
-                        actualList.items ? 
-                          actualList.items.map((item, index) => (
-                            <grid className={`flex flex-row justify-between ${item.done ? 'line-through' : ''} grid grid-flow-col grid-cols-4 gap-2`} key={index}  >
-                              <div className={`grid row-start-${index + 1} justify-center`}><input type="checkbox" value={item.done}/></div>
-                              <div className={`grid row-start-${index + 1} justify-center`}>{item.name}</div>
-                              <div className={`grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
-                              <div className={`grid row-start-${index + 1}`}><button className='bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button></div>
-                            </grid>
-                          ))
-                        : <></>}
+                    { actualList.items ? 
+                      actualList.items.map((item, index) => {
+                        console.log(item);
+                        return (
+                          <div className={`flex flex-row justify-between ${item.done ? 'line-through' : ''} grid grid-flow-col grid-cols-4 gap-2`} key={index}>
+                            <div className={`grid row-start-${index + 1} justify-center`}>
+                              <input type="checkbox" checked={item.done} onChange={() => handleCheckboxChange(index)}/>
+                            </div>
+                            <div className={`grid row-start-${index + 1} justify-center`}>{item.name}</div>
+                            <div className={`grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
+                            <div className={`grid row-start-${index + 1}`}>
+                              <button className='bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    : <></> }
                   </>
                 )}
                 {
