@@ -63,10 +63,14 @@ func KeepConnectionAlive(conn *net.TCPConn) {
 	}
 }
 
-// ReadMessage reads a message from the TCP connection (non-blocking read).
+// ReadMessage reads a message from the TCP connection (non-blocking read if numberOfMilliseconds  != -1).
 func ReadMessage(conn *net.TCPConn, numberOfMilliseconds int) ([]byte, error) {
 	buffer := make([]byte, 1024)
 
+	if(numberOfMilliseconds == -1){
+		numberOfMilliseconds = 0
+	}
+	
 	timeout := time.Duration(numberOfMilliseconds) * time.Millisecond
 	err := conn.SetReadDeadline(time.Now().Add(timeout))
 	if err != nil {

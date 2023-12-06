@@ -30,7 +30,9 @@ func handleIncomingRabbitMessages(rabbitChannel <-chan amqp.Delivery, hashRing *
 
 		ipList, _ := hashRing.GetClosestNodesIP(url, -1) // -1 because I want all nodes
 
-		(*TCPchannels)[ipList[0]]<-((messageObject).BuildMessageForServer(ipList[1:])) // Send message body to TCP
+		if(len(ipList) > 0) {
+			(*TCPchannels)[ipList[0]]<-((messageObject).BuildMessageForServer(ipList[1:])) // Send message body to TCP
+		}
 		
 		mutex.Unlock()
 	}

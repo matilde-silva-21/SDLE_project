@@ -5,6 +5,7 @@ import (
 	"log"
 	"fmt"
 	"os"
+	"time"
 	"sdle/server/utils/messageStruct"
 	//"sdle/server/utils/CRDT/shoppingList"
 )
@@ -87,14 +88,50 @@ func listenToOrchestrator(conn *net.TCPConn) error {
 		}
 
 		IPs, payload := messageStruct.ReadServerMessage(buffer[:n])
-		log.Print(IPs, payload)
+		//log.Print(IPs, payload)
 		
-		go StartQuorumConnection(IPs)
+		go StartQuorumConnection(IPs, payload)
 	}
 
 }
 
-func StartQuorumConnection(IPs []string){
+func ExecuteQuorum(conn *net.TCPConn, connChannel chan []byte, payload messageStruct.MessageStruct) error{
+
+	payload.Action = messageStruct.Read;
+	fmt.Println("\n\n", payload, "\n")
+
+	// Mandar o CRDT mais fresh para lá
+	conn.Write(payload.ToJSON())
+
+
+	buffer := make([]byte, 1024)
+
+	// Ler o CRDT de lá
+	n, err := conn.Read(buffer)
+
+	fmt.Println("i read something and i am happy")
+
+	if err != nil { return err } // TODO se houver erro A QUALQUER MOMENTO DA CONEXÃO
+
+	// Meter o CRDT de lá no chan
+	connChannel <- (buffer[:n])
+
+	// Add a short delay so the other thread can read the channel and send the message
+	time.Sleep(100 * time.Millisecond)
+
+	// Mandar o novo CRDT de volta para lá
+	messageToSend := <- connChannel
+
+	conn.Write(messageToSend)
+
+	return nil
+}
+
+
+func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct){
+
+	channelsMap := make(map[string](chan []byte))
+	listResponses := make(map[string]([]byte))
 
 	minNumConn := (len(IPs) - len(IPs)%2) + 1
 	activeConn := 0
@@ -109,25 +146,67 @@ func StartQuorumConnection(IPs []string){
 			log.Printf("Failed to connect to server with IP %s.\n", ip)
 			continue
 		}
+
 		fmt.Println("\nI connected bro i swear\n")
 		defer conn.Close()
+
+
+
+		connChannel := make(chan []byte, 3) // Create Channel for the TCP connection know which messages should be sent
+		defer close(connChannel)
+
+		channelsMap[ip] = connChannel
+
 		connections = append(connections, conn)
 		activeConn += 1
 
-		go listenToConnection(conn) // Posso mandar a mensagem de read logo, para apressar as coisas ? depois de ter o numero certo de mensagens enviadas (e sabendo que essas ligaçoes ainda estao em pé), masndar a mensagem de escrita, maybe?
+
+
+
+		go ExecuteQuorum(conn, connChannel, payload)
 
 		if (minNumConn <= activeConn) { break }
 
 	}
-	fmt.Println(connections)
 
     // TODO abortar o quorum if connection not successful
-    //fmt.Println(connections)
 
-    // Keep function running until quorum is over or else the connections break down (calling a thread2 inside a thread1 -> thread2 terminates when thread1 terminates)
-    for {
-        
-    }
+
+	// Set a timeout for the quorum
+	timeout := time.After(10 * time.Second)
+
+	// Poll channels
+	for {
+		fmt.Println("loop 1", channelsMap)
+		for key, ch := range channelsMap {
+			fmt.Println("loop 2")
+
+			select {
+				case data := <-ch:
+					log.Printf("My friend %s answered me!", key)
+					listResponses[key] = data
+				
+				case <-timeout:
+					// Break out of the loop when the timeout is reached
+					log.Print("Timeout reached. Aborting Quorum.")
+					// TODO mandar mensagem de erro de volta ao Orch
+					return
+			}
+		}
+		if(len(channelsMap) == len(listResponses)) {
+			// TODO read and merge all CRDTs and send back responses (nao esquecer de mandar o novo CRDT ao Orch)
+			
+			fmt.Println("\n\neveryone was here :)\nnow bye-bye!")
+
+			newCRDTMessage := payload.ToJSON() // placeholder
+			for _, ch := range channelsMap {
+				ch <- newCRDTMessage
+			}
+			// Add a short delay so the other threads can read the channel and send the message
+			time.Sleep(100 * time.Millisecond)
+			return
+		}
+	}
 
 }
 
@@ -140,11 +219,20 @@ func listenToConnection(conn *net.TCPConn) error {
 
 		if err != nil {
 
-			log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
-			return err
+			if err.Error() == "EOF" {
+				log.Printf("Connection %s closed by remote side.", conn.RemoteAddr().String())
+				return nil
+			} else {
+				log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
+				return err
+			}
+
 		}
 
 		log.Print(string(buffer[:n]))
+
+		log.Printf("Sending the payload back to see if communication is doing what it should. Payload: %s\n", buffer)
+		conn.Write(buffer)
 	}
 
 }
