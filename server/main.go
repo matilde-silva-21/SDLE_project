@@ -4,7 +4,7 @@ import (
 	"sdle/server/database"
 	"database/sql"
 	"fmt"
-	//"log"
+	"log"
 	//"sdle/server/orchestrator"
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
@@ -98,6 +98,6 @@ func main() {
 	if seedError != nil {
 		fmt.Println(seedError.Error())
 	}
-	
+
 	serverCommunicator.StartServerCommunication()
 }
