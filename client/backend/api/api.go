@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -120,6 +119,7 @@ func RemoveShoppingList(c *gin.Context) {
 }
 
 func GetShoppingLists(c *gin.Context) {
+
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
@@ -150,13 +150,14 @@ func GetShoppingLists(c *gin.Context) {
 }
 
 func GetShoppingList(c *gin.Context) {
+
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
 	}
 
 	var shoppingList database.ShoppingList
-	
+
 	if err := c.ShouldBindUri(&shoppingList); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
 		return

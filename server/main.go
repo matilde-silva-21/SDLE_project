@@ -1,11 +1,15 @@
 package main
 
 import (
+	"sdle/server/database"
+	"database/sql"
 	"fmt"
-	"sdle/server/orchestrator"
+	"log"
+	//"sdle/server/orchestrator"
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func LexExample(){
@@ -42,24 +46,20 @@ func ShopListExample() {
 
 	fmt.Println("\nShop List 1")
 	fmt.Println(shopList1.JSON())
-	fmt.Println("\n")
 
 	fmt.Println("\nShop List 2")
 	fmt.Println(shopList2.JSON())
-	fmt.Println("\n")
 
 
 	shopList1.JoinShoppingList(shopList2)
 
 	fmt.Println("\nShop List 1 after merging with Shop List 2")
 	fmt.Println(shopList1.JSON())
-	fmt.Println("\n")
 
 	shopList1.JoinShoppingList(shopList2)
 
 	fmt.Println("\nShop List 1 after merging with Shop List 2 (again)")
 	fmt.Println(shopList1.JSON())
-	fmt.Println("\n")
 
 	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Add)
 
@@ -75,7 +75,25 @@ func main() {
 
 	fmt.Println("Hello from server")
 
-	//ShopListExample()
+	ShopListExample()
+	//orchestrator.OrchestratorExample();
 
-	orchestrator.OrchestratorExample();
+	const filename = "server.db"
+	db, err := sql.Open("sqlite3", filename)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sqliteRepository := database.NewSQLiteRepository(db)
+	createError := sqliteRepository.CreateTables()
+	if createError != nil {
+		fmt.Println(createError.Error())
+		return
+	}
+
+	seedError := sqliteRepository.Seed()
+	if seedError != nil {
+		fmt.Println(seedError.Error())
+	}
 }
