@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import logoImage from '../images/logo192.png';
 import ModalCreate from '../components/ModalCreate';
 import ModalAdd from '../components/ModalAdd';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpload, faDownload } from '@fortawesome/free-solid-svg-icons';
+
 
 export default function HomePage() {
   const [listOfLists, setlistOfLists] = useState([]);
@@ -110,7 +113,32 @@ export default function HomePage() {
       ...actualList,
       items: updatedItems,
     });
-  };  
+  };
+
+  const handlePush = async (list) => {
+    // Missing updating list on the server
+    // await fetch(`http://localhost:8080/lists/${list.url}/update`, {
+    //   method: 'PUT',
+    //   mode: 'cors',
+    //   credentials: 'include',
+    //   body: JSON.stringify(list),
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Content-Type': 'application/json',
+    //   } 
+    // });
+  };
+
+  const handlePull = async (list) => {
+    // Missing updating list in the client side
+    // const updatedList = await fetch(`http://localhost:8080/lists/${list.url}`, {
+    //   method: 'GET',
+    //   mode: 'cors',
+    //   credentials: 'include',
+    // }).then(response => response.json());
+
+    // setActualList(updatedList);
+  };
 
   return (
     <div className='h-screen'>
@@ -152,7 +180,18 @@ export default function HomePage() {
               <div className="flex flex-col justify-center gap-2 mx-4">
                 {actualList && (
                   <>
-                    <h1 className="font-semibold flex justify-center mb-10 text-xl">{actualList.name}</h1>
+                    <div className='grid grid-cols-4 gap-2 grid-flow-col items-center'>
+                      <h1 className="font-semibold col-start-2 col-span-2 text-center mb-5 mt-5 text-xl">{actualList.name}</h1>
+                      <div className='flex flex-row justify-end gap-1 col-start-4 col-span-1'>
+                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePush}>
+                          <FontAwesomeIcon icon={faUpload} />
+                        </button>
+                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePull}>
+                          <FontAwesomeIcon icon={faDownload} />
+                        </button>
+                      </div>
+                    </div>
+                   
                     <div className='grid grid-cols-4 gap-2 grid-flow-col'>
                       <span className='grid font-bold justify-center'>Bought</span>
                       <span className='grid font-bold justify-center'>Item Name</span>
