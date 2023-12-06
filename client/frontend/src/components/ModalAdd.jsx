@@ -31,7 +31,7 @@ export default function ModalAdd({ lists, setLists }) {
                     <div className="flex">
                         <form className="flex flex-col gap-2 justify-center align-middle">
                             <label htmlFor="url">Url</label>
-                            <input type="text" value={url} placeholder="List url" className="rounded-md p-2" name="url" id="url" onChange={(e) => setUrl(e.target.value)}></input>
+                            <input type="text" placeholder="List url" className="rounded-md p-2" name="url" id="url" onChange={(e) => setUrl(e.target.value)}></input>
                         </form>
                     </div>
                 </div>

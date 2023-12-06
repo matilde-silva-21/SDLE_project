@@ -42,9 +42,9 @@ export default function ModalCreate({ lists, setLists }) {
                     <div className="flex">
                         <form className="flex flex-col gap-2 justify-center align-middle">
                             <label htmlFor="url">Url</label>
-                            <input type="text" value={url} placeholder="List url" className="rounded-md p-2" name="url" id="url" onChange={(e) => setUrl(e.target.value)}></input>
+                            <input type="text" placeholder="List url" className="rounded-md p-2" name="url" id="url" onChange={(e) => setUrl(e.target.value)}></input>
                             <label htmlFor="name">Name</label>
-                            <input type="text" value={name} placeholder="List name" className="rounded-md p-2" name="name" id="name" onChange={(e) => setName(e.target.value)}></input>
+                            <input type="text" placeholder="List name" className="rounded-md p-2" name="name" id="name" onChange={(e) => setName(e.target.value)}></input>
                         </form>
                     </div>
                 </div>
