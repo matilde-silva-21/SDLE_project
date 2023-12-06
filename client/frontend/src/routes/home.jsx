@@ -15,12 +15,11 @@ export default function HomePage() {
   const [quantity, setQuantity] = useState(0)
 
   const addNewItem = async (list) => {
-    console.log(quantity)
     const res = await fetch(`http://localhost:8080/lists/${list.url}/add`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
-      body: JSON.stringify({"name": item, "done": false, "quantity": quantity, "list": list}),
+      body: JSON.stringify({"name": item, "done": false, "quantity": parseInt(quantity, 10), "list": list}),
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -162,7 +161,7 @@ export default function HomePage() {
                       {
                         actualList.items ? 
                           actualList.items.map((item, index) => (
-                            <grid className='grid grid-flow-col grid-cols-4 gap-2'>
+                            <grid className={`flex flex-row justify-between ${item.done ? 'line-through' : ''} grid grid-flow-col grid-cols-4 gap-2`} key={index}  >
                               <div className={`grid row-start-${index + 1} justify-center`}><input type="checkbox" value={item.done}/></div>
                               <div className={`grid row-start-${index + 1} justify-center`}>{item.name}</div>
                               <div className={`grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
