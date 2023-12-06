@@ -114,17 +114,20 @@ func StartQuorumConnection(IPs []string){
 		connections = append(connections, conn)
 		activeConn += 1
 
-		go listenToConnection(conn)
+		go listenToConnection(conn) // Posso mandar a mensagem de read logo, para apressar as coisas ? depois de ter o numero certo de mensagens enviadas (e sabendo que essas ligaçoes ainda estao em pé), masndar a mensagem de escrita, maybe?
 
 		if (minNumConn <= activeConn) { break }
 
 	}
 	fmt.Println(connections)
 
-	// Keep function running until quorum is over or else the connections break down (calling a thread2 inside a thread1 -> thread2 terminates when thread1 terminates)
-	for {
-		
-	}
+    // TODO abortar o quorum if connection not successful
+    //fmt.Println(connections)
+
+    // Keep function running until quorum is over or else the connections break down (calling a thread2 inside a thread1 -> thread2 terminates when thread1 terminates)
+    for {
+        
+    }
 
 }
 
