@@ -218,10 +218,10 @@ export default function HomePage() {
                             <div className={`grid row-start-${index + 1} justify-center`}>
                               <input type="checkbox" checked={item.done} onChange={() => handleCheckboxChange(index)}/>
                             </div>
-                            <div className={`grid row-start-${index + 1} justify-center`}>{item.name}</div>
-                            <div className={`grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
+                            <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.name}</div>
+                            <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
                             <div className={`grid row-start-${index + 1}`}>
-                              <button className='bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button>
+                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
                             </div>
                           </div>
                         );
