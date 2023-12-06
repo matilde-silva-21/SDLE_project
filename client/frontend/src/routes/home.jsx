@@ -170,7 +170,7 @@ export default function HomePage() {
                     listOfLists.map((list, index) => (
                       <div key={index} className='flex flex-row justify-between bg-pink-50 p-2 rounded-md'>
                         <button className='flex' onClick={() => selectList(list)}>{list.name}</button>
-                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={() => deleteList(list)}>Delete</button>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={() => deleteList(list)}>Delete</button>
                       </div>
                 ))}
               </div>
@@ -195,10 +195,10 @@ export default function HomePage() {
                       </div>
                       <h1 className="font-semibold col-start-2 col-span-2 text-center mb-5 mt-5 text-xl">{actualList.name}</h1>
                       <div className='flex flex-row justify-end gap-1 col-start-4 col-span-1'>
-                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePush}>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={handlePush}>
                           <FontAwesomeIcon icon={faUpload} />
                         </button>
-                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePull}>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={handlePull}>
                           <FontAwesomeIcon icon={faDownload} />
                         </button>
                       </div>
