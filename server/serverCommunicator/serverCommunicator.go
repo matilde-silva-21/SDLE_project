@@ -249,6 +249,7 @@ func listenToConnection(conn *net.TCPConn) error {
 
 		log.Print(string(buffer[:n]))
 
+		// TODO fazer o codigo do recetor do quorum
 		log.Printf("Sending the payload back to see if communication is doing what it should. Payload: %s\n", buffer)
 		conn.Write(buffer)
 	}
