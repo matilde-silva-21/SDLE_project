@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
 	"github.com/gin-gonic/gin"
@@ -60,7 +59,6 @@ func CreateShoppingList(c *gin.Context) {
 	newShoppingListModel, createErr := shoppingList.Create(db)
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
-		fmt.Println(createErr.Error())
 		return
 	}
 
@@ -206,7 +204,7 @@ func AddItemToShoppingList(c *gin.Context) {
 	shoppingListObj := shoppingListModel.(*database.ShoppingList)
 	var item database.Item
 
-	bindingErr := c.ShouldBind(&item) 
+	bindingErr := c.ShouldBind(&item)
 	if bindingErr != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
 		return
