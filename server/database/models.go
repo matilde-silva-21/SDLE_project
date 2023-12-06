@@ -1,9 +1,5 @@
 package database
 
-import (
-	"fmt"	
-);
-
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
 	Create(r *SQLiteRepository) (Model, error)
@@ -17,8 +13,8 @@ type ShoppingList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name" form:"listName"`
 	Url  string `json:"url" uri:"url" form:"listUrl"`
-	List string `json:"list"`
-	State string `json:"state"`
+	List string
+	State string
 }
 
 type User struct {
@@ -26,11 +22,11 @@ type User struct {
 }
 
 type Item struct {
-	Id   int64        `json:"id" uri:"id"`
-	Name string       `json:"name" form:"itemName"`
-	Done bool         `json:"done" form:"itemDone"`
-	Quantity int64	  `json:"quantity"`
-	List ShoppingList `json:"list"`
+	Id       int64        `json:"id" uri:"id"`
+	Name     string       `json:"name" form:"itemName"`
+	Done     bool         `json:"done" form:"itemDone"`
+	Quantity int64        `json:"quantity" form:"itemQuantity"`
+	List     ShoppingList `json:"list"`
 }
 
 type UserList struct {
@@ -80,8 +76,7 @@ func (item *Item) Delete(r *SQLiteRepository) error {
 
 func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 	updatedItem := updated.(*Item)
-	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)", 
-		updatedItem.Name, updatedItem.Done, updatedItem.Quantity, updatedItem.List.Id, &item.Id)
+	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)", updatedItem.Name, updatedItem.Done, updatedItem.Quantity, updatedItem.List.Id, &item.Id)
 
 	if err != nil {
 		return err
@@ -120,7 +115,7 @@ func (item *Item) ReadAll(r *SQLiteRepository) ([]Model, error) {
 
 	for rows.Next() {
 		var i Item
-		if err := rows.Scan(&i.Id, &i.Name, &i.Done); err != nil {
+		if err := rows.Scan(&i.Id, &i.Name, &i.Done, &i.Quantity, &i.List.Id); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)
@@ -199,7 +194,6 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 }
 
 func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
-	fmt.Println(user.Username)
 	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
 
 	if err != nil {
@@ -227,7 +221,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 
 func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List TEXT, State TEXT)")
+	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List String, State String)")
 
 	if err != nil {
 		return err
@@ -236,7 +230,7 @@ func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
-	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url, List, State) VALUES (?, ?, ? ,?)", &list.Name, &list.Url, &list.List, &list.State)
+	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url, List, State) VALUES (?, ?, ?, ?)", &list.Name, &list.Url, &list.List, &list.State)
 
 	if err != nil {
 		return nil, err
@@ -257,6 +251,19 @@ func (list *ShoppingList) Delete(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
+	updatedList := updated.(*ShoppingList)
+	res, err := r.db.Exec("UPDATE ShoppingList SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil || rows == 0 {
+		return err
+	}
+
 	return nil
 }
 
@@ -284,7 +291,7 @@ func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 
 	for rows.Next() {
 		var l ShoppingList
-		if err := rows.Scan(&l.Id); err != nil {
+		if err := rows.Scan(&l.Id, &l.Name, &l.Url, &l.List, &l.State); err != nil {
 			return nil, err
 		}
 		lists = append(lists, &l)
@@ -335,7 +342,6 @@ func (userList *UserList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (userList *UserList) Create(r *SQLiteRepository) (Model, error) {
-	fmt.Println(userList)
 	_, err := r.db.Exec("INSERT INTO UserList(ListId, UserId) VALUES (?, ?)", &userList.ListID, &userList.UserID)
 
 	if err != nil {

@@ -2,10 +2,8 @@ package api
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -61,7 +59,6 @@ func CreateShoppingList(c *gin.Context) {
 	newShoppingListModel, createErr := shoppingList.Create(db)
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
-		fmt.Println(createErr.Error())
 		return
 	}
 
@@ -111,6 +108,7 @@ func RemoveShoppingList(c *gin.Context) {
 }
 
 func GetShoppingLists(c *gin.Context) {
+
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
@@ -141,13 +139,14 @@ func GetShoppingLists(c *gin.Context) {
 }
 
 func GetShoppingList(c *gin.Context) {
+
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
 	}
 
 	var shoppingList database.ShoppingList
-	
+
 	if err := c.ShouldBindUri(&shoppingList); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
 		return
@@ -205,7 +204,7 @@ func AddItemToShoppingList(c *gin.Context) {
 	shoppingListObj := shoppingListModel.(*database.ShoppingList)
 	var item database.Item
 
-	bindingErr := c.ShouldBind(&item) 
+	bindingErr := c.ShouldBind(&item)
 	if bindingErr != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
 		return
