@@ -12,12 +12,15 @@ export default function HomePage() {
 
   const [item, setItem] = useState("")
 
+  const [quantity, setQuantity] = useState(0)
+
   const addNewItem = async (list) => {
+    console.log(quantity)
     const res = await fetch(`http://localhost:8080/lists/${list.url}/add`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
-      body: JSON.stringify({"name": item, "done": false, "list": list}),
+      body: JSON.stringify({"name": item, "done": false, "quantity": quantity, "list": list}),
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -25,11 +28,13 @@ export default function HomePage() {
     });
 
     const itemObj = await res.json()
+    console.log(itemObj)
 
     setActualList({
       ...list,
       items: [...(list.items ?? []), itemObj]
     })
+    console.log(actualList)
   };
 
   const deleteItem = async (item) => {
@@ -144,32 +149,37 @@ export default function HomePage() {
         </div>
         <div className='col-start-2 col-span-2 row-start-2'>
           <div className='flex justify-center'>
-              <div className="flex flex-col justify-center gap-2">
+              <div className="flex flex-col justify-center gap-2 mx-4">
                 {actualList && (
                   <>
                     <h1 className="font-semibold flex justify-center">{actualList.name}</h1>
-                    <ul className='flex flex-col gap-2'>
+                    <div className='grid grid-cols-4 gap-2 grid-flow-col'>
+                      <span className='grid font-bold justify-center'>Bought</span>
+                      <span className='grid font-bold justify-center'>Item Name</span>
+                      <span className='grid font-bold justify-center'>Quantity</span>
+                      <span className='grid font-bold justify-center'>Action</span>
+                    </div>
                       {
                         actualList.items ? 
                           actualList.items.map((item, index) => (
-                            <li
-                              key={index}
-                              className={`flex flex-row justify-between ${selectedItems.includes(index) ? 'line-through' : ''}`}
-                              onClick={() => toggleItemSelection(index)}
-                            >
-                              <input type="checkbox" value={item.done}/> {item.name}
-                              <button className='flex bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button>
-                            </li>
+                            <grid className='grid grid-flow-col grid-cols-4 gap-2'>
+                              <div className={`grid row-start-${index + 1} justify-center`}><input type="checkbox" value={item.done}/></div>
+                              <div className={`grid row-start-${index + 1} justify-center`}>{item.name}</div>
+                              <div className={`grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
+                              <div className={`grid row-start-${index + 1}`}><button className='bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button></div>
+                            </grid>
                           ))
                         : <></>}
-                    </ul>
                   </>
                 )}
                 {
                   actualList && 
-                  <div className='flex flex-row gap-1'>
-                    <input className='flex rounded-md p-1' type='text' id='itemName' value={item} placeholder='name' onChange={(e) => setItem(e.target.value)}></input>
-                    <button className="flex bg-pink-200 p-1 rounded-md" onClick={() => addNewItem(actualList)}>Add Item</button>
+                  <div className='flex flex-col justify-center mt-1'>
+                    <div className='grid grid-cols-4 gap-2'>
+                      <div className='grid col-start-2 justify-center'><input className='rounded-md p-1 justify-center text-center' type='text' id='itemName' value={item} placeholder='name' onChange={(e) => setItem(e.target.value)}></input></div>
+                      <div className='grid col-start-3 justify-center'><input className='[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none rounded-md p-1 text-center' type='number' id='itemQuantity' value={quantity} onChange={(e) => setQuantity(e.target.value)}></input></div>
+                      <div className='grid col-start-4'><button className=" bg-pink-200 p-1 rounded-md" onClick={() => addNewItem(actualList)}>Add Item</button></div>
+                    </div>
                   </div>
                 }
               </div>

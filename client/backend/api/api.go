@@ -41,37 +41,46 @@ func GetItem(c* gin.Context) {
 }
 
 func CreateShoppingList(c *gin.Context) {
+	fmt.Println("start")
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
 	}
 
+	fmt.Println("before getting username from cookie")
 	username, cookieErr := getUsernameFromCookie(c)
 	if cookieErr != nil {
+		fmt.Println(cookieErr)
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error reading username from cookie"})
 		return
 	}
 
+	fmt.Println("before binding list")
 	var shoppingList database.ShoppingList
 	if err := c.ShouldBind(&shoppingList); err != nil {
+		fmt.Println(err)
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
 		return
 	}
 
+	fmt.Println("before creating list")
 	newShoppingListModel, createErr := shoppingList.Create(db)
 	if createErr != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
 		fmt.Println(createErr.Error())
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
 		return
 	}
 
+	fmt.Println(newShoppingListModel)
 	newShoppingList := newShoppingListModel.(*database.ShoppingList)
+	fmt.Println(newShoppingList)
 
 	var userList database.UserList
 	userList.ListID = newShoppingList.Id
 	userList.UserID = username
 	_, userListErr := userList.Create(db)
 	if userListErr != nil {
+		fmt.Println(userListErr)
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating user list"})
 		return
 	}
@@ -205,7 +214,8 @@ func AddItemToShoppingList(c *gin.Context) {
 	shoppingListObj := shoppingListModel.(*database.ShoppingList)
 	var item database.Item
 
-	bindingErr := c.ShouldBind(&item) 
+	bindingErr := c.ShouldBind(&item)
+	fmt.Println(item)
 	if bindingErr != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
 		return

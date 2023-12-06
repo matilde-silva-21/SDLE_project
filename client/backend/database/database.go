@@ -35,14 +35,14 @@ func (r *SQLiteRepository) CreateTables() error {
 }
 
 func (r *SQLiteRepository) Seed() error {
-	sl1 := ShoppingList{Id: 1, Name: "My Shopping List 1",  Url: "testurl"}
-	sl2 := ShoppingList{Id: 2, Name: "My Shopping List 1", Url: "test"}  
+	sl1 := ShoppingList{Id: 1, Name: "My Shopping List 1",  Url: "testurl", List: "", State: ""}
+	sl2 := ShoppingList{Id: 2, Name: "My Shopping List 1", Url: "test", List: "", State: ""}  
 	
 	var seedItems = []Model{
 		&sl1,
 		&sl2,
-		&Item{Id: 1, Name: "Bread", Done: false, List: sl1},
-		&Item{Id: 2, Name: "Cheese", Done: true, List: sl2},
+		&Item{Id: 1, Name: "Bread", Done: false, Quantity: 3, List: sl1},
+		&Item{Id: 2, Name: "Cheese", Done: true, Quantity: 1, List: sl2},
 	}
 
 	for _, v := range seedItems {
