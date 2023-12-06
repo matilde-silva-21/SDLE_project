@@ -3,7 +3,7 @@ import logoImage from '../images/logo192.png';
 import ModalCreate from '../components/ModalCreate';
 import ModalAdd from '../components/ModalAdd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faDownload, faCopy } from '@fortawesome/free-solid-svg-icons';
 
 
 export default function HomePage() {
@@ -140,6 +140,13 @@ export default function HomePage() {
     // setActualList(updatedList);
   };
 
+  const handleCopyUrl = (list) => {
+    const listUrl = `http://localhost:3000/lists/${list.url}`;
+    navigator.clipboard.writeText(listUrl)
+      .then(() => alert('URL copied to clipboard'))
+      .catch((err) => console.error('Failed to copy URL', err));
+  };
+
   return (
     <div className='h-screen'>
       <div className='grid grid-cols-[25%_auto] grid-rows-[15%_auto] grid-flow-row h-full'>
@@ -181,6 +188,11 @@ export default function HomePage() {
                 {actualList && (
                   <>
                     <div className='grid grid-cols-4 gap-2 grid-flow-col items-center'>
+                      <div className='flex flex-col justify-center items-center'>
+                        <div className='col-start-1 col-span-1'>
+                          <button className='flex p-2 bg-pink-200 rounded-md align-center' onClick={() => handleCopyUrl(actualList)}><FontAwesomeIcon icon={faCopy} /></button>
+                        </div>
+                      </div>
                       <h1 className="font-semibold col-start-2 col-span-2 text-center mb-5 mt-5 text-xl">{actualList.name}</h1>
                       <div className='flex flex-row justify-end gap-1 col-start-4 col-span-1'>
                         <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePush}>
