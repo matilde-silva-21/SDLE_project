@@ -35,6 +35,8 @@ export default function HomePage() {
       items: [...(list.items ?? []), itemObj]
     })
     console.log(actualList)
+    setItem("");
+    setQuantity(0);
   };
 
   const deleteItem = async (item) => {
