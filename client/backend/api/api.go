@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -285,7 +287,10 @@ func getUsernameFromCookie(c *gin.Context) (string, error) {
 	user := database.User{Username: usernameStr}
 	_, readErr := user.Read(db)
 	if readErr != nil {
-		return "", readErr
+		_, createErr := user.Create(db)
+		if createErr != nil {
+			return "", createErr
+		}
 	}
 
 	return usernameStr, nil
@@ -293,6 +298,7 @@ func getUsernameFromCookie(c *gin.Context) (string, error) {
 
 func isLoggedIn(c *gin.Context) bool {
 	_, err := getUsernameFromCookie(c)
+	fmt.Println(err)
 
 	return (err == nil)
 }
