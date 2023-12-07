@@ -120,7 +120,7 @@ export default function HomePage() {
   const handlePush = async (list) => {
     // Missing updating list on the server
     // await fetch(`http://localhost:8080/lists/${list.url}/update`, {
-    //   method: 'PUT',
+    //   method: 'POST',
     //   mode: 'cors',
     //   credentials: 'include',
     //   body: JSON.stringify(list),
