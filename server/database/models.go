@@ -12,7 +12,7 @@ type Model interface {
 type ShoppingList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name" form:"listName"`
-	Url  string `json:"url" uri:"url" form:"listUrl"`
+	Url  string `json:"url"`
 	List string
 	State string
 }
@@ -252,7 +252,7 @@ func (list *ShoppingList) Delete(r *SQLiteRepository) error {
 
 func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
 	updatedList := updated.(*ShoppingList)
-	res, err := r.db.Exec("UPDATE ShoppingList SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
+	res, err := r.db.Exec("UPDATE ShoppingList SET list = (?), state = (?), url = (?) WHERE id = (?)", updatedList.List, updatedList.State, updatedList.Url, list.Id)
 
 	if err != nil {
 		return err

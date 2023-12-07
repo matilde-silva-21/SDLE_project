@@ -16,7 +16,7 @@ type Model interface {
 type ShoppingList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name" form:"listName"`
-	Url  string `json:"url" uri:"url" form:"listUrl"`
+	Url  string `json:"url"`
 	List string `json:"list"`
 	State string `json:"state"`
 }
@@ -261,7 +261,7 @@ func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
 }
 
 func (list *ShoppingList) Read(r *SQLiteRepository) (Model, error) {
-	res := r.db.QueryRow("SELECT * FROM ShoppingList WHERE Url = ?", &list.Url)
+	res := r.db.QueryRow("SELECT * FROM ShoppingList WHERE Url = (?)", &list.Url)
 
 	var updated ShoppingList
 	if err := res.Scan(&updated.Id, &updated.Name, &updated.Url, &updated.List, &updated.State); err != nil {
