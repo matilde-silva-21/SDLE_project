@@ -3,7 +3,7 @@ import logoImage from '../images/logo192.png';
 import ModalCreate from '../components/ModalCreate';
 import ModalAdd from '../components/ModalAdd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faDownload, faCopy } from '@fortawesome/free-solid-svg-icons';
 
 
 export default function HomePage() {
@@ -35,6 +35,8 @@ export default function HomePage() {
       items: [...(list.items ?? []), itemObj]
     })
     console.log(actualList)
+    setItem("");
+    setQuantity(0);
   };
 
   const deleteItem = async (item) => {
@@ -92,6 +94,10 @@ export default function HomePage() {
     getLists()
   }, [])
 
+  useEffect(() => {
+    setActualList(listOfLists[listOfLists.length-1])
+  }, [listOfLists])
+
   const getLists = async () => {
     
     let lists = await fetch("http://localhost:8080/lists", {method: "GET", mode: "cors", credentials: "include"})
@@ -140,6 +146,13 @@ export default function HomePage() {
     // setActualList(updatedList);
   };
 
+  const handleCopyUrl = (list) => {
+    const listUrl = `http://localhost:3000/lists/${list.url}`;
+    navigator.clipboard.writeText(listUrl)
+      .then(() => alert('URL copied to clipboard'))
+      .catch((err) => console.error('Failed to copy URL', err));
+  };
+
   return (
     <div className='h-screen'>
       <div className='grid grid-cols-[25%_auto] grid-rows-[15%_auto] grid-flow-row h-full'>
@@ -161,9 +174,9 @@ export default function HomePage() {
                       You have no shopping lists yet
                     </div> : 
                     listOfLists.map((list, index) => (
-                      <div key={index} className='flex flex-row justify-between bg-pink-50 p-2 rounded-md'>
-                        <button className='flex' onClick={() => selectList(list)}>{list.name}</button>
-                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={() => deleteList(list)}>Delete</button>
+                      <div key={index} className='flex flex-row justify-between bg-pink-50 p-2.5 rounded-md'>
+                        <button className='flex items-center' onClick={() => selectList(list)}>{list.name}</button>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={() => deleteList(list)}>Delete</button>
                       </div>
                 ))}
               </div>
@@ -181,12 +194,17 @@ export default function HomePage() {
                 {actualList && (
                   <>
                     <div className='grid grid-cols-4 gap-2 grid-flow-col items-center'>
+                      <div className='flex flex-col justify-center items-center'>
+                        <div className='col-start-1 col-span-1'>
+                          <button className='flex p-2 bg-pink-200 rounded-md align-center' onClick={() => handleCopyUrl(actualList)}><FontAwesomeIcon icon={faCopy} /></button>
+                        </div>
+                      </div>
                       <h1 className="font-semibold col-start-2 col-span-2 text-center mb-5 mt-5 text-xl">{actualList.name}</h1>
                       <div className='flex flex-row justify-end gap-1 col-start-4 col-span-1'>
-                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePush}>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={handlePush}>
                           <FontAwesomeIcon icon={faUpload} />
                         </button>
-                        <button className='flex p-2 bg-pink-300 rounded-md' onClick={handlePull}>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={handlePull}>
                           <FontAwesomeIcon icon={faDownload} />
                         </button>
                       </div>
@@ -206,10 +224,10 @@ export default function HomePage() {
                             <div className={`grid row-start-${index + 1} justify-center`}>
                               <input type="checkbox" checked={item.done} onChange={() => handleCheckboxChange(index)}/>
                             </div>
-                            <div className={`grid row-start-${index + 1} justify-center`}>{item.name}</div>
-                            <div className={`grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
+                            <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.name}</div>
+                            <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
                             <div className={`grid row-start-${index + 1}`}>
-                              <button className='bg-pink-200 p-1 rounded-md' onClick={() => deleteItem(item)}>Delete</button>
+                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
                             </div>
                           </div>
                         );
