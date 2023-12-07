@@ -3,7 +3,7 @@
 First, make sure the RabbitMQ broker is running. You can do that by executing:
 ```docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management```
 
-Then, start the orchestrator as well as it's backup. The orcherstrator address and port are hardcoded, so make sure you use port `8080` for the original orchestrator and port `8081` for it's backup. Run the following commands (on two different terminals) in the `server/orchestrator` directory:
+Then, start the orchestrator, as well as its backup. The orcherstrator address and port are hardcoded, so make sure you use port `8080` for the original orchestrator and port `8081` for the backup. Run the following commands (on two different terminals) in the `server/orchestrator` directory:
 
 ```go run orchestrator.go 8080``` and ```go run orchestrator.go 8081```
 
