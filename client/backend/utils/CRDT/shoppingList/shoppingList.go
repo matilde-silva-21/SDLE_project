@@ -399,20 +399,20 @@ func MessageFormatToCRDT(body []byte) ShoppingList{
 
 }
 
-func DatabaseShoppingListToCRDT(list database.ShoppingList){
+func DatabaseShoppingListToCRDT(list *database.ShoppingList) ShoppingList{
 
-	return CreateFromStrings(list.Url, list.Name, list.List, list.State)
+	return CreateFromStrings((*list).Url, (*list).Name, (*list).List, (*list).State)
 
 }
 
-func (list ShoppingList) ToDatabaseShoppingList(id int){
+func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingList{
 
-	return database.ShoppingList{
+	return &database.ShoppingList{
 		Id:    id,
 		Name:  list.name,
 		Url:   list.url,
 		List:  list.ListFormatForDatabase(),
-		State: state.StateFormatForDatabase()
+		State: list.StateFormatForDatabase(),
 	}
 
 }

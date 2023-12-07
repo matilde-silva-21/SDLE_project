@@ -8,7 +8,10 @@ import (
 	"time"
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/communication/tcp"
-	//"sdle/server/utils/CRDT/shoppingList"
+	"sdle/server/utils/CRDT/shoppingList"
+	"sdle/server/database"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type ChanPair struct {
@@ -275,7 +278,7 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 }
 
 
-func ParticipateInQuorum(conn *net.TCPConn) error{
+func ParticipateInQuorum(conn *net.TCPConn, sqliteRepository *database.SQLiteRepository) error{
 
 	remoteIP := conn.RemoteAddr().String()
 
@@ -299,26 +302,62 @@ func ParticipateInQuorum(conn *net.TCPConn) error{
 		}
 
 		message, _ := messageStruct.JSONToMessage(buffer[:n])
-
+		
+		id, _ := database.GetIDByURL(sqliteRepository, message.ListURL)
+		
+		CRDT := shoppingList.MessageFormatToCRDT(buffer[:n])
+		dbList := CRDT.ToDatabaseShoppingList(id)
+		
 		switch message.Action {
 			case messageStruct.Write:
 				log.Printf("Received write command from %s: %s", remoteIP, message)
-				// TODO write CRDT to memory
+
+				if(id == 0){ // If List doesn't yet exist, create it
+					_, err = dbList.Create(sqliteRepository)
+				} else {
+					err = dbList.Update(sqliteRepository, dbList)
+				}
+
+				if(err != nil){
+					log.Print("An error occured while writing to memory.")
+					return err
+				}
 
 				log.Print("Successfully wrote to memory.")
 				return nil
 
 			case messageStruct.Read:
 				log.Printf("Received read request from %s: %s", remoteIP, message)
-				// TODO read CRDT from memory + change placeholder
+				messageToSend := []byte{}
+				
+				if(id == 0){ // If List doesn't exist, send empty body
+					messageToSend = messageStruct.CreateMessage(message.ListURL, message.Username, messageStruct.Read, "").ToJSON()
+				} else {
+					localList, err := dbList.Read(sqliteRepository)
+					
+					if(err != nil){
+						log.Print("An error occured while reading from memory.")
+						return err
+					}
 
-				messageToSend := buffer
-				conn.Write(messageToSend)
+					localCRDT := shoppingList.DatabaseShoppingListToCRDT(localList.(*database.ShoppingList))
+					messageToSend = localCRDT.ConvertToMessageFormat(message.Username, messageStruct.Read)
+				}
+
+				conn.Write([]byte(messageToSend))
 
 				log.Print("Successfully sent payload.")
 			case messageStruct.Delete:
 				log.Printf("Received delete command from %s: %s", remoteIP, message)
-				// TODO delete CRDT from memory
+				
+				if(id != 0) {
+					err := dbList.Delete(sqliteRepository)
+
+					if(err != nil){
+						log.Print("An error occured while deleting from memory.")
+						return err
+					}
+				}
 				
 				log.Printf("Successfully deleted from memory.")
 				return nil
@@ -327,7 +366,7 @@ func ParticipateInQuorum(conn *net.TCPConn) error{
 }
 
 
-func StartServerCommunication() {
+func StartServerCommunication(sqliteRepository *database.SQLiteRepository) {
 
 	
 	outboundIP := GetOutboundIP()
@@ -363,7 +402,7 @@ func StartServerCommunication() {
             continue
         }
 		
-		go ParticipateInQuorum(conn)
+		go ParticipateInQuorum(conn, sqliteRepository)
 	}
 
 }

@@ -96,5 +96,5 @@ func main() {
 		fmt.Println(seedError.Error())
 	}
 
-	serverCommunicator.StartServerCommunication()
+	serverCommunicator.StartServerCommunication(sqliteRepository)
 }
