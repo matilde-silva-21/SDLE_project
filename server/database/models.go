@@ -194,7 +194,7 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 }
 
 func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
-	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
+	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
 
 	if err != nil {
 		return nil, err
@@ -221,7 +221,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 
 func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
-	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List String, State String)")
+	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url String UNIQUE, List String, State String)")
 
 	if err != nil {
 		return err
