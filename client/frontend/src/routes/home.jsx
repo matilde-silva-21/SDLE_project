@@ -94,6 +94,10 @@ export default function HomePage() {
     getLists()
   }, [])
 
+  useEffect(() => {
+    setActualList(listOfLists[listOfLists.length-1])
+  }, [listOfLists])
+
   const getLists = async () => {
     
     let lists = await fetch("http://localhost:8080/lists", {method: "GET", mode: "cors", credentials: "include"})

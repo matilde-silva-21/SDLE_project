@@ -7,25 +7,25 @@ export default function ModalCreate({ lists, setLists }) {
     const [name, setName] = useState("")
 
     async function createList() {
-        const url = uuidv4();
-        const response = await fetch("http://localhost:8080/lists/create", {
-            method: "POST",
-            body: JSON.stringify({"url": url, "name": name, "list": "", state: ""}), // FIXME: change list and state to respective CRDT's
-            mode: "cors",
-            credentials: "include",
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-        })
+      const url = uuidv4();
+      const response = await fetch("http://localhost:8080/lists/create", {
+          method: "POST",
+          body: JSON.stringify({"url": url, "name": name, "list": "", state: ""}), // FIXME: change list and state to respective CRDT's
+          mode: "cors",
+          credentials: "include",
+          headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+          }
+      })
 
-        if (response.ok) {
-            console.log("New shopping list created successfully")
-            let res = await response.json()
-            console.log(res)
-            setLists([...lists, res])
-        }
-    }
+      if (response.ok) {
+        console.log("New shopping list created successfully")
+        let res = await response.json()
+        console.log(res)
+        setLists([...lists, res])
+      }
+  }
     
     return (        
           <Popup
