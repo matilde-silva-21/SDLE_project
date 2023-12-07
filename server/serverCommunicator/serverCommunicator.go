@@ -175,7 +175,6 @@ func ReadAndMergeCRDT(listResponses *(map[int]([]byte)), payload messageStruct.M
 			listResponse := shoppingList.MessageByteToCRDT(response)
 			finalList.JoinShoppingList(listResponse)
 		}
-
 	}
 
 	if(id != 0){ // If List exists

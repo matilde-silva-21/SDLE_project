@@ -2,9 +2,9 @@ package shoppingList
 
 import (
 	"fmt"
-	LexCounter "sdle/server/utils/CRDT/lexCounter"
-	StringStandardizer "sdle/server/utils/stringStandardizer"
-	"sdle/server/utils/messageStruct"
+	LexCounter "sdle/m/v2/utils/CRDT/lexCounter"
+	StringStandardizer "sdle/m/v2/utils/utils/stringStandardizer"
+	"sdle/m/v2/utils/messageStruct"
 	"sdle/server/database"
 	"github.com/google/uuid"
 	"encoding/json"
@@ -366,7 +366,7 @@ func (list ShoppingList) ConvertToMessageFormat(username string, action messageS
 	
 	body := fmt.Sprintf(`{"Name":"%s", "List":%s, "State":%s}`, list.name, jsonList, jsonState)
 
-	return messageStruct.CreateMessage(list.url, username, action, body).ToJSON()
+	return messageStruct.CreateMessage(username, list.url, action, body).ToJSON()
 
 }
 
@@ -395,7 +395,7 @@ func MessageByteToCRDT(body []byte) ShoppingList{
 		return fake
 	}
 
-	return createFromArguments(mess.ListURL, dummyVar.Name, dummyVar.List, dummyVar.State)
+	return createFromArguments(dummyVar.Name, mess.ListURL, dummyVar.List, dummyVar.State)
 
 }
 
@@ -410,13 +410,7 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 	var dummyVar dummyStruct
 	var fake ShoppingList
 
-	
-	if(err != nil){
-		fmt.Println("Error 1:", err)
-		return fake
-	}
-
-	err = json.Unmarshal([]byte(mess.Body), &dummyVar)
+	err := json.Unmarshal([]byte(mess.Body), &dummyVar)
 
 	if(err != nil){
 		fmt.Println("Error 2:", err)

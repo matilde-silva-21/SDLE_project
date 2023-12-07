@@ -3,6 +3,7 @@ package main
 import (
 	messageStruct "sdle/server/utils/messageStruct"
 	"sdle/server/utils/communication/rabbitMQ"
+	shoppingList "sdle/server/utils/CRDT/shoppingList"
 	"log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
@@ -14,6 +15,49 @@ func failOnError(err error, msg string) {
 	}
 }
 
+
+func ShopListExample() shoppingList.ShoppingList{
+	
+	shopList1 := shoppingList.Create("My List 1")
+	shopList2 := shoppingList.Create("My List 2")
+
+	//fmt.Println(shopList1.GetURL())
+
+	shopList1.AddItem("apple", 3)
+	shopList1.AddItem("rice", 5)
+	
+	shopList2.AddItem("pear", 2)
+	shopList2.AddItem("rice", 3)
+	shopList2.BuyItem("rice")
+
+	/*fmt.Println("\nShop List 1")
+	fmt.Println(shopList1.JSON())
+
+	fmt.Println("\nShop List 2")
+	fmt.Println(shopList2.JSON())*/
+
+
+	shopList1.JoinShoppingList(shopList2)
+
+	/*fmt.Println("\nShop List 1 after merging with Shop List 2")
+	fmt.Println(shopList1.JSON())*/
+
+	shopList1.JoinShoppingList(shopList2)
+
+	/*fmt.Println("\nShop List 1 after merging with Shop List 2 (again)")
+	fmt.Println(shopList1.JSON())
+
+	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Write)
+
+	fmt.Println("\n", string(messageFormat))
+
+	fmt.Println("\n", shoppingList.MessageByteToCRDT(messageFormat))
+	shoplistCopy := shoppingList.CreateFromStrings(shopList1.GetURL(), shopList1.GetListName(), shopList1.ListFormatForDatabase(), shopList1.StateFormatForDatabase())
+
+	fmt.Println("\n", shoplistCopy)*/
+
+	return shopList1
+}
 
 func rabbit() {
 
@@ -40,7 +84,7 @@ func rabbit() {
 	failOnError(err, "Failed to declare an exchange")
 
 	// Create String to match  
-	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Write, "CRDT").ToJSON()
+	body := ShopListExample().ConvertToMessageFormat("john.doe", messageStruct.Write)
 
 
 	err = ch.Publish(
@@ -81,9 +125,8 @@ func main(){
 
 	go rabbitmq.PrintIncomingMessages(messages)
 
-	body := messageStruct.CreateMessage("123", "jonh.doe", messageStruct.Write, "CRDT").ToJSON()
+	body := ShopListExample().ConvertToMessageFormat("john.doe", messageStruct.Write)
 	
-
 	for {
 
 		err := ch.Publish(
