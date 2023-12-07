@@ -108,34 +108,45 @@ func listenToOrchestrator(conn *net.TCPConn, orchChannel *chan []byte) error {
 
 }
 
-// TODO clean up a esta função
 func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.MessageStruct) error{
 
+	remoteIP := conn.RemoteAddr()
+
+	// TODO criar mensagem de pedido leitura 
 	payload.Action = messageStruct.Read;
-	fmt.Println("\n\n", payload, "\n")
 
-	// Mandar o CRDT mais fresh para lá
-	conn.Write(payload.ToJSON())
-
+	// Send Message asking to read their copy of the ShoppingList of specified URL
+	conn.Write(payload.ToJSON()) // TODO change Placeholder
+	log.Printf("Successfully sent read request for URL %s to IP %s.", payload.ListURL, remoteIP)
 
 	buffer := make([]byte, 1024)
 
-	// Ler o CRDT que vem do outro server
+	// Wait for the response
 	n, err := conn.Read(buffer)
 
-	if err != nil { return err } // TODO se houver erro A QUALQUER MOMENTO DA CONEXÃO
+	if err != nil {
+		return err // If the operation fails the calling thread will not receive a notification that this thread is ready and thus the quorum will be aborted.
+	}
 
-	// Meter o CRDT de lá no chan
+	log.Printf("Received answer to read request from %s: %s", remoteIP, buffer)
+
+	// Send response to channel so the calling thread can handle the CRDT merging
 	chanPair.channel <- (buffer[:n])
 
 	// Wait for the signal that channel was read by the calling thread
 	<- chanPair.ready
 
-	// Mandar o novo CRDT de volta para lá
-	messageToSend := <- chanPair.channel
+	// Read channel and send the new version of the CRDT to quorum participant
+	messageToSend := <- chanPair.channel // TODO nao esquecer de meter Action.Write na outgoing message.
+	_, err = conn.Write(messageToSend)
 
-	conn.Write(messageToSend)
+	if err != nil {
+		return err // If the operation fails the calling thread will not receive a notification that this thread is ready and thus the quorum will be aborted.
+	}
 
+	log.Print("Successfully sent Write command for URL %s to IP %s.", payload.ListURL, remoteIP)
+	
+	// Indicate to calling thread that quorum is finished and it may be gracefully terminated
 	chanPair.ready <- struct{}{}
 
 	conn.Close()
@@ -155,26 +166,22 @@ func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[s
 
 			select {
 				case data := <-(ch.channel):
-					log.Printf("My friend %s answered me!", key)
 					ch.ready <- struct{}{}
 					(*listResponses)[key] = data
 				
-				case <-timeout:
-					// Break out of the loop when the timeout is reached. Send error message to orchestrator.
+				case <-timeout: // Break out of the loop when the timeout is reached. Send error message to orchestrator.
 					log.Print("Timeout reached. Aborting Quorum.")
 
-					// TODO alterar placeholder com a actual error message
-					errorMessage := payload
-					errorMessage.Action = messageStruct.Error
+					errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
 
 					(*orchChannel) <- errorMessage.ToJSON()
 					return
 			}
 		}
 		if(len(*channelsMap) == len(*listResponses)) {
-			// TODO read and merge all CRDTs and send back responses (nao esquecer de mandar o novo CRDT ao Orch)
+			// TODO read and merge all CRDTs and send back responses
 			
-			fmt.Println("\n\neveryone came to the party :)\nnow bye-bye!")
+			log.Print("Merging all CRDTs and sending new version to Quorum Participants.")
 
 			newCRDTMessage := payload.ToJSON() // placeholder
 			for _, ch := range *channelsMap {
@@ -183,9 +190,23 @@ func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[s
 
 			// End the program only when all threads have already been read
 			for _, ch := range *channelsMap {
-				<- ch.ready
+
+				select {
+					case <- ch.ready:
+						continue
+					
+					case <-timeout: // Break out of the loop when the timeout is reached. Send error message to orchestrator.
+						log.Print("Timeout reached. Aborting Quorum.")
+
+						errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
+
+						(*orchChannel) <- errorMessage.ToJSON()
+						return
+				}
 			}
 
+			log.Printf("Quorum ended succesfully! Sending new version to Orchestrator.")
+			// TODO mandar o novo CRDT ao Orch
 			return
 		}
 	}
@@ -239,9 +260,7 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 
 		log.Printf("Minimum number of connections (%d) not reached. Aborting Quorum.", minNumConn)
 
-		// TODO alterar placeholder com a actual error message
-		errorMessage := payload
-		errorMessage.Action = messageStruct.Error
+		errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
 
 		*orchChannel <- errorMessage.ToJSON()
 
@@ -255,6 +274,7 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 
 func listenToConnection(conn *net.TCPConn) error {
 
+	didIt := false
 	for {
 
 		buffer := make([]byte, 1024)
@@ -273,10 +293,12 @@ func listenToConnection(conn *net.TCPConn) error {
 		}
 
 		log.Print(string(buffer[:n]))
-
-		// TODO fazer o codigo do recetor do quorum
-		log.Printf("Sending the payload back to see if communication is doing what it should. Payload: %s\n", buffer)
-		conn.Write(buffer)
+		if(!didIt){
+			// TODO fazer o codigo do recetor do quorum
+			log.Printf("Sending the payload back to see if communication is doing what it should. Payload: %s\n", buffer)
+			conn.Write(buffer)
+			didIt = true
+		}
 	}
 
 }
