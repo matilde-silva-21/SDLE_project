@@ -170,8 +170,8 @@ export default function HomePage() {
                       You have no shopping lists yet
                     </div> : 
                     listOfLists.map((list, index) => (
-                      <div key={index} className='flex flex-row justify-between bg-pink-50 p-2 rounded-md'>
-                        <button className='flex' onClick={() => selectList(list)}>{list.name}</button>
+                      <div key={index} className='flex flex-row justify-between bg-pink-50 p-2.5 rounded-md'>
+                        <button className='flex items-center' onClick={() => selectList(list)}>{list.name}</button>
                         <button className='flex p-2 bg-pink-200 rounded-md' onClick={() => deleteList(list)}>Delete</button>
                       </div>
                 ))}
