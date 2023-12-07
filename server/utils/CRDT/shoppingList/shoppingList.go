@@ -349,14 +349,6 @@ func (list ShoppingList) StateFormatForDatabase() string{
 
 func (list ShoppingList) ConvertToMessageFormat(username string, action messageStruct.MessageType) []byte{
 
-	jsonUrl, err := json.Marshal(list.url)
-
-	if(err != nil){
-		fmt.Println("Error:", err)
-		var dummy []byte
-		return dummy
-	}
-
 	jsonList, err := json.Marshal(list.list)
 	
 	if(err != nil){
@@ -373,7 +365,7 @@ func (list ShoppingList) ConvertToMessageFormat(username string, action messageS
 		return dummy
 	}
 	
-	body := fmt.Sprintf(`{"Name":"%s", "Url":%s, "List":%s, "State":%s}`, list.name, jsonUrl, jsonList, jsonState)
+	body := fmt.Sprintf(`{"Name":"%s", "List":%s, "State":%s}`, list.name, jsonList, jsonState)
 
 	return messageStruct.CreateMessage(list.url, username, action, body).ToJSON()
 
@@ -383,7 +375,6 @@ func MessageFormatToCRDT(body []byte) ShoppingList{
 
 	type dummyStruct struct {
 		Name string
-		Url string
 		List LexCounter.LexCounter[string, int]
 		State LexCounter.LexCounter[string, int]
 	}
