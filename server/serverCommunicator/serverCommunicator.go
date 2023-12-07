@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 	"sdle/server/utils/messageStruct"
+	"sdle/server/utils/communication/tcp"
 	//"sdle/server/utils/CRDT/shoppingList"
 )
 
@@ -29,7 +30,7 @@ func GetOutboundIP() string {
 }
 
 
-func connectToOrchestrator(outboundIP string) {
+func ConnectToOrchestrator(outboundIP string) {
 
 	orchestratorAddress := "localhost:8080"
 	backupAddress := "localhost:8081"
@@ -69,7 +70,7 @@ func connectToOrchestrator(outboundIP string) {
 		
 		conn.Write([]byte(outboundIP))
 
-		err = listenToOrchestrator(conn, &orchChannel)
+		err = ListenToOrchestrator(conn, orchChannel)
 	
 		if(err != nil){
 			log.Printf("Orchestrator connection unexpectedly shut down. Trying to reconnect.\n")
@@ -79,30 +80,30 @@ func connectToOrchestrator(outboundIP string) {
 
 }
 
-func listenToOrchestrator(conn *net.TCPConn, orchChannel *chan []byte) error {
-
-	buffer := make([]byte, 1024)
+func ListenToOrchestrator(conn *net.TCPConn, orchChannel chan []byte) error {
 	
 	// Sempre que recebo uma mensagem do orchestrator, um Quorum é iniciado.
 	for {
 		select{
 
-			case message := <- (*orchChannel):
+			case message := <- orchChannel:
 				conn.Write(message)
 				log.Printf("Sent message to orchestrator: %s\n", string(message))
 
 			default:
-				n, err := conn.Read(buffer)
+				buffer, err := tcp.ReadMessage(conn, 1)
 				
-				if err != nil {
-					
+				if(len(buffer) == 0 && err != nil){
+
 					log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
 					return err
+				} else if (len(buffer) != 0) {
+
+					IPs, payload := messageStruct.ReadServerMessage(buffer)
+					
+					go StartQuorumConnection(IPs, payload, orchChannel)
 				}
 				
-				IPs, payload := messageStruct.ReadServerMessage(buffer[:n])
-				
-				go StartQuorumConnection(IPs, payload, orchChannel)
 		}
 	}
 
@@ -128,7 +129,7 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 		return err // If the operation fails the calling thread will not receive a notification that this thread is ready and thus the quorum will be aborted.
 	}
 
-	log.Printf("Received answer to read request from %s: %s", remoteIP, buffer)
+	log.Printf("Received answer to read request from %s: %s", remoteIP, buffer[:n])
 
 	// Send response to channel so the calling thread can handle the CRDT merging
 	chanPair.channel <- (buffer[:n])
@@ -137,14 +138,14 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 	<- chanPair.ready
 
 	// Read channel and send the new version of the CRDT to quorum participant
-	messageToSend := <- chanPair.channel // TODO nao esquecer de meter Action.Write na outgoing message.
+	messageToSend := <- chanPair.channel // TODO nao esquecer de meter a Action original (Write ou Delete) na outgoing message.
 	_, err = conn.Write(messageToSend)
 
 	if err != nil {
 		return err // If the operation fails the calling thread will not receive a notification that this thread is ready and thus the quorum will be aborted.
 	}
 
-	log.Print("Successfully sent Write command for URL %s to IP %s.", payload.ListURL, remoteIP)
+	log.Printf("Successfully sent %s command for URL %s to IP %s.", payload.Action, payload.ListURL, remoteIP)
 	
 	// Indicate to calling thread that quorum is finished and it may be gracefully terminated
 	chanPair.ready <- struct{}{}
@@ -155,26 +156,26 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 }
 
 
-func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[string]([]byte), payload messageStruct.MessageStruct, orchChannel *chan []byte){
+func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *([]([]byte)), payload messageStruct.MessageStruct, orchChannel chan []byte){
 
 	// Set a timeout for the quorum
 	timeout := time.After(10 * time.Second)
 
 	// Poll channels
 	for {
-		for key, ch := range *channelsMap {
+		for i, ch := range *channelsMap {
 
 			select {
 				case data := <-(ch.channel):
 					ch.ready <- struct{}{}
-					(*listResponses)[key] = data
+					(*listResponses)[i] = data
 				
 				case <-timeout: // Break out of the loop when the timeout is reached. Send error message to orchestrator.
 					log.Print("Timeout reached. Aborting Quorum.")
 
 					errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
 
-					(*orchChannel) <- errorMessage.ToJSON()
+					(orchChannel) <- errorMessage.ToJSON()
 					return
 			}
 		}
@@ -200,7 +201,7 @@ func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[s
 
 						errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
 
-						(*orchChannel) <- errorMessage.ToJSON()
+						(orchChannel) <- errorMessage.ToJSON()
 						return
 				}
 			}
@@ -214,12 +215,12 @@ func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[s
 }
 
 
-func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel *chan []byte){
+func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel chan []byte){
 
-	channelsMap := make(map[string](ChanPair))
-	listResponses := make(map[string]([]byte))
+	channelsMap := [](ChanPair){}
+	listResponses := []([]byte) {}
 
-	minNumConn := (len(IPs) - len(IPs)%2) + 1
+	minNumConn := 5//(len(IPs) - len(IPs)%2) + 1
 	activeConn := 0
 
 	connections := [](*net.TCPConn){}
@@ -241,15 +242,13 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 		connChannel := make(chan []byte, 3) // Create Channel for the TCP connection know which messages should be sent
 		defer close(connChannel)
 
-		channelsMap[ip] = ChanPair{channel: connChannel, ready: make(chan struct{})}
+		channelsMap = append(channelsMap, ChanPair{channel: connChannel, ready: make(chan struct{})})
 
 		connections = append(connections, conn)
 		activeConn += 1
 
 
 
-
-		go ExecuteQuorum(conn, channelsMap[ip], payload)
 
 		if (minNumConn <= activeConn) { break }
 
@@ -262,9 +261,13 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 
 		errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
 
-		*orchChannel <- errorMessage.ToJSON()
+		orchChannel <- errorMessage.ToJSON()
 
 		return
+	} else {
+		for i, conn := range connections {
+			go ExecuteQuorum(conn, channelsMap[i], payload)
+		}
 	}
 
 	PollQuorumChannels(&channelsMap, &listResponses, payload, orchChannel)
@@ -272,35 +275,56 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 	return
 }
 
-func listenToConnection(conn *net.TCPConn) error {
 
-	didIt := false
+func ParticipateInQuorum(conn *net.TCPConn) error{
+
+	remoteIP := conn.RemoteAddr().String()
+
+	defer conn.Close()
+
+	log.Printf("Participating in quorum invoked by %s.", remoteIP)
+	buffer := make([]byte, 1024)
 	for {
-
-		buffer := make([]byte, 1024)
 		n, err := conn.Read(buffer)
 
 		if err != nil {
 
 			if err.Error() == "EOF" {
-				log.Printf("Connection %s closed by remote side.", conn.RemoteAddr().String())
+				log.Printf("Connection %s closed by remote side.", remoteIP)
 				return nil
 			} else {
-				log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
+				log.Printf("Connection with endpoint %s encountered a failure: %s\n", remoteIP, err)
 				return err
 			}
 
 		}
 
-		log.Print(string(buffer[:n]))
-		if(!didIt){
-			// TODO fazer o codigo do recetor do quorum
-			log.Printf("Sending the payload back to see if communication is doing what it should. Payload: %s\n", buffer)
-			conn.Write(buffer)
-			didIt = true
+		message, _ := messageStruct.JSONToMessage(buffer[:n])
+
+		switch message.Action {
+			case messageStruct.Write:
+				log.Printf("Received write command from %s: %s", remoteIP, message)
+				// TODO write CRDT to memory
+
+				log.Print("Successfully wrote to memory.")
+				return nil
+
+			case messageStruct.Read:
+				log.Printf("Received read request from %s: %s", remoteIP, message)
+				// TODO read CRDT from memory + change placeholder
+
+				messageToSend := buffer
+				conn.Write(messageToSend)
+
+				log.Print("Successfully sent payload.")
+			case messageStruct.Delete:
+				log.Printf("Received delete command from %s: %s", remoteIP, message)
+				// TODO delete CRDT from memory
+				
+				log.Printf("Successfully deleted from memory.")
+				return nil
 		}
 	}
-
 }
 
 
@@ -311,7 +335,7 @@ func StartServerCommunication() {
 
 	// <------------ Connect To orchestrator ------------>
 	
-	go connectToOrchestrator(outboundIP)
+	go ConnectToOrchestrator(outboundIP)
 
 	// <------------------------------------------------->
 	
@@ -339,10 +363,8 @@ func StartServerCommunication() {
 			fmt.Println("Error:", err)
             continue
         }
-		fmt.Println("\nTHERES SOMEONE AT THE DOOR\n")
 		
-		defer conn.Close()
-		go listenToConnection(conn)
+		go ParticipateInQuorum(conn)
 	}
 
 }

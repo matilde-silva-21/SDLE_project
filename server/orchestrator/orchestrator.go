@@ -10,8 +10,8 @@ import (
 	
 	"sdle/server/orchestrator/hash"
 	"sdle/server/utils/messageStruct"
-	"sdle/server/orchestrator/communication/tcp"
-	"sdle/server/orchestrator/communication/rabbitMQ"
+	"sdle/server/utils/communication/tcp"
+	"sdle/server/utils/communication/rabbitMQ"
 )
 
 var mutex sync.Mutex

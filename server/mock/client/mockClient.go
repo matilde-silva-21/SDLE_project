@@ -2,7 +2,7 @@ package main
 
 import (
 	messageStruct "sdle/server/utils/messageStruct"
-	"sdle/server/orchestrator/communication/rabbitMQ"
+	"sdle/server/utils/communication/rabbitMQ"
 	"log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
