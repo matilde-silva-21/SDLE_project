@@ -5,6 +5,7 @@ import (
 	LexCounter "sdle/server/utils/CRDT/lexCounter"
 	StringStandardizer "sdle/server/utils/stringStandardizer"
 	"sdle/server/utils/messageStruct"
+	"sdle/server/database"
 	"github.com/google/uuid"
 	"encoding/json"
 )
@@ -395,5 +396,23 @@ func MessageFormatToCRDT(body []byte) ShoppingList{
 	}
 
 	return createFromArguments(mess.ListURL, dummyVar.Name, dummyVar.List, dummyVar.State)
+
+}
+
+func DatabaseShoppingListToCRDT(list database.ShoppingList) ShoppingList{
+
+	return CreateFromStrings(list.Url, list.Name, list.List, list.State)
+
+}
+
+func (list ShoppingList) ToDatabaseShoppingList(id int64) database.ShoppingList{
+
+	return database.ShoppingList{
+		Id:    id,
+		Name:  list.name,
+		Url:   list.url,
+		List:  list.ListFormatForDatabase(),
+		State: list.StateFormatForDatabase(),
+	}
 
 }

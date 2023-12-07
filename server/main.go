@@ -1,11 +1,10 @@
 package main
 
 import (
-	//"sdle/server/database"
-	//"database/sql"
+	"sdle/server/database"
+	"database/sql"
 	"fmt"
-	//"log"
-	//"sdle/server/orchestrator"
+	"log"
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
@@ -76,7 +75,7 @@ func main() {
 
 	fmt.Println("Hello from server")
 
-	/*ShopListExample()
+	//ShopListExample()
 	
 	const filename = "server.db"
 	db, err := sql.Open("sqlite3", filename)
@@ -95,7 +94,7 @@ func main() {
 	seedError := sqliteRepository.Seed()
 	if seedError != nil {
 		fmt.Println(seedError.Error())
-	}*/
+	}
 
 	serverCommunicator.StartServerCommunication()
 }
