@@ -32,8 +32,9 @@ func createFromArguments(listName string, url string, list, state LexCounter.Lex
 
 	(&list).SetID("list")
 	(&state).SetID("state")
+	u := uuid.New()
 
-	return ShoppingList{url: url, name: listName, list: list, state: state}
+	return ShoppingList{url: u.String(), name: listName, list: list, state: state}
 }
 
 
@@ -41,6 +42,7 @@ func CreateFromStrings(listName, url, list, state string) ShoppingList {
 
 	listObject := LexCounter.Create[string, int]("list")
 	stateObject := LexCounter.Create[string, int]("state")
+	u := uuid.New().String()
 
 	err := json.Unmarshal([]byte(list), &listObject)
 
@@ -58,7 +60,7 @@ func CreateFromStrings(listName, url, list, state string) ShoppingList {
 		return fake
 	}
 
-	return ShoppingList{url: url, name: listName, list: listObject, state: stateObject}
+	return ShoppingList{url: u, name: listName, list: listObject, state: stateObject}
 }
 
 
