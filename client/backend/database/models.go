@@ -16,7 +16,7 @@ type Model interface {
 type ShoppingList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name" form:"listName"`
-	Url  string `json:"url" uri:"url" form:"listUrl"`
+	Url  string `json:"url" uri:"url"`
 	List string `json:"list"`
 	State string `json:"state"`
 }
