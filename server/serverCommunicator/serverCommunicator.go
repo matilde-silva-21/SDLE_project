@@ -46,6 +46,7 @@ func connectToOrchestrator(outboundIP string) {
 		os.Exit(0)
 	}
 	
+	orchChannel := make(chan []byte, 10) // There probably won't be more than 10 quorums at the same time.
 	
 	for {
 		// Try to connect to Orchestrator, in case of failure, connect to backup orchestrator. If both connections fail, the program stops
@@ -68,7 +69,7 @@ func connectToOrchestrator(outboundIP string) {
 		
 		conn.Write([]byte(outboundIP))
 
-		err = listenToOrchestrator(conn)
+		err = listenToOrchestrator(conn, &orchChannel)
 	
 		if(err != nil){
 			log.Printf("Orchestrator connection unexpectedly shut down. Trying to reconnect.\n")
@@ -78,27 +79,36 @@ func connectToOrchestrator(outboundIP string) {
 
 }
 
-func listenToOrchestrator(conn *net.TCPConn) error {
+func listenToOrchestrator(conn *net.TCPConn, orchChannel *chan []byte) error {
 
+	buffer := make([]byte, 1024)
+	
+	// Sempre que recebo uma mensagem do orchestrator, um Quorum é iniciado.
 	for {
+		select{
 
-		buffer := make([]byte, 1024)
-		n, err := conn.Read(buffer)
+			case message := <- (*orchChannel):
+				conn.Write(message)
+				log.Printf("Sent message to orchestrator: %s\n", string(message))
 
-		if err != nil {
-
-			log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
-			return err
+			default:
+				n, err := conn.Read(buffer)
+				
+				if err != nil {
+					
+					log.Printf("Connection with endpoint %s encountered a failure: %s\n", conn.RemoteAddr().String(), err)
+					return err
+				}
+				
+				IPs, payload := messageStruct.ReadServerMessage(buffer[:n])
+				
+				go StartQuorumConnection(IPs, payload, orchChannel)
 		}
-
-		IPs, payload := messageStruct.ReadServerMessage(buffer[:n])
-		//log.Print(IPs, payload)
-		
-		go StartQuorumConnection(IPs, payload)
 	}
 
 }
 
+// TODO clean up a esta função
 func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.MessageStruct) error{
 
 	payload.Action = messageStruct.Read;
@@ -134,16 +144,14 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 }
 
 
-func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[string]([]byte), payload messageStruct.MessageStruct){
+func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[string]([]byte), payload messageStruct.MessageStruct, orchChannel *chan []byte){
 
 	// Set a timeout for the quorum
 	timeout := time.After(10 * time.Second)
 
 	// Poll channels
 	for {
-		fmt.Println("loop 1", *channelsMap)
 		for key, ch := range *channelsMap {
-			fmt.Println("loop 2")
 
 			select {
 				case data := <-(ch.channel):
@@ -152,9 +160,14 @@ func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[s
 					(*listResponses)[key] = data
 				
 				case <-timeout:
-					// Break out of the loop when the timeout is reached
+					// Break out of the loop when the timeout is reached. Send error message to orchestrator.
 					log.Print("Timeout reached. Aborting Quorum.")
-					// TODO mandar mensagem de erro de volta ao Orch
+
+					// TODO alterar placeholder com a actual error message
+					errorMessage := payload
+					errorMessage.Action = messageStruct.Error
+
+					(*orchChannel) <- errorMessage.ToJSON()
 					return
 			}
 		}
@@ -180,7 +193,7 @@ func PollQuorumChannels(channelsMap *map[string](ChanPair), listResponses *map[s
 }
 
 
-func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct){
+func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel *chan []byte){
 
 	channelsMap := make(map[string](ChanPair))
 	listResponses := make(map[string]([]byte))
@@ -195,11 +208,11 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct){
 		conn, err := net.DialTCP("tcp", nil, tcpAddr)
 
 		if err != nil {
-			log.Printf("Failed to connect to server with IP %s.\n", ip)
+			log.Printf("Failed to connect to server with outbound IP %s.\n", ip)
 			continue
 		}
 
-		fmt.Println("\nI connected bro i swear\n")
+		log.Printf("Succesfully connected to server with outbound IP %s.\n", ip)
 		defer conn.Close()
 
 
@@ -221,9 +234,21 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct){
 
 	}
 
-    // TODO abortar o quorum if connection not successful
+	// If the minimum number of connections is not reached, abort quorum.
+	if (minNumConn > activeConn){
 
-	PollQuorumChannels(&channelsMap, &listResponses, payload)
+		log.Printf("Minimum number of connections (%d) not reached. Aborting Quorum.", minNumConn)
+
+		// TODO alterar placeholder com a actual error message
+		errorMessage := payload
+		errorMessage.Action = messageStruct.Error
+
+		*orchChannel <- errorMessage.ToJSON()
+
+		return
+	}
+
+	PollQuorumChannels(&channelsMap, &listResponses, payload, orchChannel)
 
 	return
 }
