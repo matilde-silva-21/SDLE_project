@@ -156,7 +156,7 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 }
 
 
-func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *([]([]byte)), payload messageStruct.MessageStruct, orchChannel chan []byte){
+func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]byte)), payload messageStruct.MessageStruct, orchChannel chan []byte){
 
 	// Set a timeout for the quorum
 	timeout := time.After(10 * time.Second)
@@ -169,7 +169,6 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *([]([]byte)), 
 				case data := <-(ch.channel):
 					ch.ready <- struct{}{}
 					(*listResponses)[i] = data
-				
 				case <-timeout: // Break out of the loop when the timeout is reached. Send error message to orchestrator.
 					log.Print("Timeout reached. Aborting Quorum.")
 
@@ -217,11 +216,11 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *([]([]byte)), 
 
 func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel chan []byte){
 
-	channelsMap := [](ChanPair){}
-	listResponses := []([]byte) {}
-
 	minNumConn := 5//(len(IPs) - len(IPs)%2) + 1
 	activeConn := 0
+
+	channelsMap := [](ChanPair) {}
+	listResponses := make(map[int]([]byte))
 
 	connections := [](*net.TCPConn){}
 
