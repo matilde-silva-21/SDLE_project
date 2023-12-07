@@ -370,7 +370,7 @@ func (list ShoppingList) ConvertToMessageFormat(username string, action messageS
 
 }
 
-func MessageFormatToCRDT(body []byte) ShoppingList{
+func MessageByteToCRDT(body []byte) ShoppingList{
 
 	type dummyStruct struct {
 		Name string
@@ -389,6 +389,28 @@ func MessageFormatToCRDT(body []byte) ShoppingList{
 	}
 
 	err = json.Unmarshal([]byte(mess.Body), &dummyVar)
+
+	if(err != nil){
+		fmt.Println("Error 2:", err)
+		return fake
+	}
+
+	return createFromArguments(mess.ListURL, dummyVar.Name, dummyVar.List, dummyVar.State)
+
+}
+
+func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
+
+	type dummyStruct struct {
+		Name string
+		List LexCounter.LexCounter[string, int]
+		State LexCounter.LexCounter[string, int]
+	}
+
+	var dummyVar dummyStruct
+	var fake ShoppingList
+
+	err := json.Unmarshal([]byte(mess.Body), &dummyVar)
 
 	if(err != nil){
 		fmt.Println("Error 2:", err)

@@ -33,7 +33,7 @@ func GetOutboundIP() string {
 }
 
 
-func ConnectToOrchestrator(outboundIP string) {
+func ConnectToOrchestrator(outboundIP string, sqliteRepository *database.SQLiteRepository) {
 
 	orchestratorAddress := "localhost:8080"
 	backupAddress := "localhost:8081"
@@ -73,7 +73,7 @@ func ConnectToOrchestrator(outboundIP string) {
 		
 		conn.Write([]byte(outboundIP))
 
-		err = ListenToOrchestrator(conn, orchChannel)
+		err = ListenToOrchestrator(conn, orchChannel, sqliteRepository)
 	
 		if(err != nil){
 			log.Printf("Orchestrator connection unexpectedly shut down. Trying to reconnect.\n")
@@ -83,7 +83,7 @@ func ConnectToOrchestrator(outboundIP string) {
 
 }
 
-func ListenToOrchestrator(conn *net.TCPConn, orchChannel chan []byte) error {
+func ListenToOrchestrator(conn *net.TCPConn, orchChannel chan []byte, sqliteRepository *database.SQLiteRepository) error {
 	
 	// Sempre que recebo uma mensagem do orchestrator, um Quorum é iniciado.
 	for {
@@ -104,7 +104,7 @@ func ListenToOrchestrator(conn *net.TCPConn, orchChannel chan []byte) error {
 
 					IPs, payload := messageStruct.ReadServerMessage(buffer)
 					
-					go StartQuorumConnection(IPs, payload, orchChannel)
+					go StartQuorumConnection(IPs, payload, orchChannel, sqliteRepository)
 				}
 				
 		}
@@ -116,11 +116,10 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 
 	remoteIP := conn.RemoteAddr()
 
-	// TODO criar mensagem de pedido leitura 
 	payload.Action = messageStruct.Read;
 
 	// Send Message asking to read their copy of the ShoppingList of specified URL
-	conn.Write(payload.ToJSON()) // TODO change Placeholder
+	conn.Write(payload.ToJSON())
 	log.Printf("Successfully sent read request for URL %s to IP %s.", payload.ListURL, remoteIP)
 
 	buffer := make([]byte, 1024)
@@ -141,7 +140,7 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 	<- chanPair.ready
 
 	// Read channel and send the new version of the CRDT to quorum participant
-	messageToSend := <- chanPair.channel // TODO nao esquecer de meter a Action original (Write ou Delete) na outgoing message.
+	messageToSend := <- chanPair.channel
 	_, err = conn.Write(messageToSend)
 
 	if err != nil {
@@ -158,8 +157,55 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 	return nil
 }
 
+func ReadAndMergeCRDT(listResponses *(map[int]([]byte)), payload messageStruct.MessageStruct, sqliteRepository *database.SQLiteRepository) (shoppingList.ShoppingList, error){
 
-func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]byte)), payload messageStruct.MessageStruct, orchChannel chan []byte){
+	finalList := shoppingList.MessageStructToCRDT(payload)
+	id, _ := database.GetIDByURL(sqliteRepository, payload.ListURL)
+
+	var err error
+	var nilList shoppingList.ShoppingList
+	
+	for _, response := range *listResponses {
+		mess, err := messageStruct.JSONToMessage(response)
+
+		if (err != nil){
+			log.Print("An error occured while merging the lists.")
+			return nilList, err
+		} else if (mess.Body != ""){
+			listResponse := shoppingList.MessageByteToCRDT(response)
+			finalList.JoinShoppingList(listResponse)
+		}
+
+	}
+
+	if(id != 0){ // If List exists
+		dbList := finalList.ToDatabaseShoppingList(id)
+		localList, err := dbList.Read(sqliteRepository)
+		
+		if(err != nil){
+			log.Print("An error occured while reading from memory.")
+			return nilList, err
+		}
+		
+		localCRDT := shoppingList.DatabaseShoppingListToCRDT(localList.(*database.ShoppingList))
+		finalList.JoinShoppingList(localCRDT)
+		
+		dbList = finalList.ToDatabaseShoppingList(id)
+		err = dbList.Update(sqliteRepository, dbList)
+	} else {
+		dbList := finalList.ToDatabaseShoppingList(id)
+		_, err = dbList.Create(sqliteRepository)
+	}
+
+	if(err != nil){
+		log.Print("An error occured while writing to memory.")
+		return nilList, err
+	}
+
+	return finalList, nil
+}
+
+func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]byte)), payload messageStruct.MessageStruct, orchChannel chan []byte, sqliteRepository *database.SQLiteRepository){
 
 	// Set a timeout for the quorum
 	timeout := time.After(10 * time.Second)
@@ -182,11 +228,23 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]by
 			}
 		}
 		if(len(*channelsMap) == len(*listResponses)) {
-			// TODO read and merge all CRDTs and send back responses
 			
-			log.Print("Merging all CRDTs and sending new version to Quorum Participants.")
+			mergedCRDT, err := ReadAndMergeCRDT(listResponses, payload, sqliteRepository)
+			
+			if(err != nil){
 
-			newCRDTMessage := payload.ToJSON() // placeholder
+				errorMessage := messageStruct.CreateMessage(payload.ListURL, payload.Username, messageStruct.Error, payload.Body)
+				(orchChannel) <- errorMessage.ToJSON()
+
+				return
+			}
+
+			log.Printf("Merge completed: %s", mergedCRDT)
+			
+	
+			log.Print("Sending new version to Quorum Participants.")
+			newCRDTMessage := mergedCRDT.ConvertToMessageFormat(payload.Username, payload.Action)
+
 			for _, ch := range *channelsMap {
 				ch.channel <- newCRDTMessage
 			}
@@ -208,8 +266,14 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]by
 				}
 			}
 
-			log.Printf("Quorum ended succesfully! Sending new version to Orchestrator.")
-			// TODO mandar o novo CRDT ao Orch
+			if(payload.Action != messageStruct.Delete){
+				log.Print("Quorum ended succesfully! Sending new version to Orchestrator.")
+				orchChannel <- newCRDTMessage
+			} else {
+				log.Print("Quorum ended succesfully!")
+
+			}
+
 			return
 		}
 	}
@@ -217,7 +281,7 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]by
 }
 
 
-func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel chan []byte){
+func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel chan []byte, sqliteRepository *database.SQLiteRepository){
 
 	minNumConn := (len(IPs) - len(IPs)%2) + 1
 	activeConn := 0
@@ -272,7 +336,7 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 		}
 	}
 
-	PollQuorumChannels(&channelsMap, &listResponses, payload, orchChannel)
+	PollQuorumChannels(&channelsMap, &listResponses, payload, orchChannel, sqliteRepository)
 
 	return
 }
@@ -305,7 +369,7 @@ func ParticipateInQuorum(conn *net.TCPConn, sqliteRepository *database.SQLiteRep
 		
 		id, _ := database.GetIDByURL(sqliteRepository, message.ListURL)
 		
-		CRDT := shoppingList.MessageFormatToCRDT(buffer[:n])
+		CRDT := shoppingList.MessageByteToCRDT(buffer[:n])
 		dbList := CRDT.ToDatabaseShoppingList(id)
 		
 		switch message.Action {
@@ -373,7 +437,7 @@ func StartServerCommunication(sqliteRepository *database.SQLiteRepository) {
 
 	// <------------ Connect To orchestrator ------------>
 	
-	go ConnectToOrchestrator(outboundIP)
+	go ConnectToOrchestrator(outboundIP, sqliteRepository)
 
 	// <------------------------------------------------->
 	
