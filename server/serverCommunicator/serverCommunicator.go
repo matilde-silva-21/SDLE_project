@@ -216,7 +216,7 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]by
 
 func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, orchChannel chan []byte){
 
-	minNumConn := 5//(len(IPs) - len(IPs)%2) + 1
+	minNumConn := (len(IPs) - len(IPs)%2) + 1
 	activeConn := 0
 
 	channelsMap := [](ChanPair) {}
