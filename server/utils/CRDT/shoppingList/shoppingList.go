@@ -366,7 +366,7 @@ func (list ShoppingList) ConvertToMessageFormat(username string, action messageS
 	
 	body := fmt.Sprintf(`{"Name":"%s", "List":%s, "State":%s}`, list.name, jsonList, jsonState)
 
-	return messageStruct.CreateMessage(username, list.url, action, body).ToJSON()
+	return messageStruct.CreateMessage(list.url, username, action, body).ToJSON()
 
 }
 
@@ -417,7 +417,7 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 		return fake
 	}
 
-	return createFromArguments(mess.ListURL, dummyVar.Name, dummyVar.List, dummyVar.State)
+	return createFromArguments(dummyVar.Name, mess.ListURL, dummyVar.List, dummyVar.State)
 
 }
 
