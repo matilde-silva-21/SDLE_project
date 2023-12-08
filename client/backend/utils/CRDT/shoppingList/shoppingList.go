@@ -379,11 +379,11 @@ func MessageFormatToCRDT(body []byte) ShoppingList{
 	var fake ShoppingList
 
 	mess, err := messageStruct.JSONToMessage(body)
-
 	if(err != nil){
 		fmt.Println("Error 1:", err)
 		return fake
 	}
+	fmt.Println(mess)
 
 	err = json.Unmarshal([]byte(mess.Body), &dummyVar)
 
