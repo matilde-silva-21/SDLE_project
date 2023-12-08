@@ -317,6 +317,22 @@ func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, err
 	return items, nil
 }
 
+func GetIDByURL(r *SQLiteRepository, url string) (int64, error) {
+	var id int64
+	err := r.db.QueryRow("SELECT Id FROM ShoppingList WHERE Url = ?", url).Scan(&id)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Return a custom error indicating that no matching URL was found
+			return 0, fmt.Errorf("ShoppingList with URL '%s' not found", url)
+		}
+		// Return other errors as is
+		return 0, err
+	}
+
+	return id, nil
+}
+
 // USER LIST MODEL METHODS
 
 func (userList *UserList) CreateTable(r *SQLiteRepository) error {

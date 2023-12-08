@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	//"sdle/server/orchestrator"
 	"sdle/server/utils/messageStruct"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
+	"sdle/server/serverCommunicator"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -61,11 +61,11 @@ func ShopListExample() {
 	fmt.Println("\nShop List 1 after merging with Shop List 2 (again)")
 	fmt.Println(shopList1.JSON())
 
-	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Add)
+	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Write)
 
 	fmt.Println("\n", string(messageFormat))
 
-	fmt.Println("\n", shoppingList.MessageFormatToCRDT(messageFormat))
+	fmt.Println("\n", shoppingList.MessageByteToCRDT(messageFormat))
 	shoplistCopy := shoppingList.CreateFromStrings(shopList1.GetURL(), shopList1.GetListName(), shopList1.ListFormatForDatabase(), shopList1.StateFormatForDatabase())
 
 	fmt.Println("\n", shoplistCopy)
@@ -75,9 +75,8 @@ func main() {
 
 	fmt.Println("Hello from server")
 
-	ShopListExample()
-	//orchestrator.OrchestratorExample();
-
+	//ShopListExample()
+	
 	const filename = "server.db"
 	db, err := sql.Open("sqlite3", filename)
 
@@ -91,9 +90,11 @@ func main() {
 		fmt.Println(createError.Error())
 		return
 	}
-
+	
 	seedError := sqliteRepository.Seed()
 	if seedError != nil {
 		fmt.Println(seedError.Error())
 	}
+
+	serverCommunicator.StartServerCommunication(sqliteRepository)
 }
