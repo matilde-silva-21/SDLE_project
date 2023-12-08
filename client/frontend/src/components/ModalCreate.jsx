@@ -10,7 +10,7 @@ export default function ModalCreate({ lists, setLists }) {
       const url = uuidv4();
       const response = await fetch("http://localhost:8080/lists/create", {
           method: "POST",
-          body: JSON.stringify({"url": url, "name": name, "list": "", state: ""}), // FIXME: change list and state to respective CRDT's
+          body: JSON.stringify({ "name": name, "url": url }),
           mode: "cors",
           credentials: "include",
           headers: {
@@ -20,9 +20,7 @@ export default function ModalCreate({ lists, setLists }) {
       })
 
       if (response.ok) {
-        console.log("New shopping list created successfully")
         let res = await response.json()
-        console.log(res)
         setLists([...lists, res])
       }
   }
