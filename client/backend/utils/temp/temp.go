@@ -10,14 +10,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func joinReceivedList(serverMsg messageStruct.MessageStruct, db *sql.DB) {
-	// Retrieve 
-
-
-	// // Assuming you have a method to convert the message body into a ShoppingList
-
+func joinReceivedList(serverMsg messageStruct.MessageStruct, repo *database.SQLiteRepository) {
 	remoteList := shoppingList.MessageFormatToCRDT(serverMsg.ToJSON())
-	fmt.Println(remoteList.GetURL())
+	fmt.Println("Remote list")
+	fmt.Println(remoteList)
+	targetList := &database.ShoppingList{Url: "testurl"}
+	result, err := targetList.Read(repo)
+    if err != nil {
+        fmt.Println("error")
+    }
+
+    if shoppingListResult, ok := result.(*database.ShoppingList); ok {
+        targetList = shoppingListResult
+		fmt.Println(targetList)
+    }
 
 	// // Join the lists
 	// localList.JoinShoppingList(remoteList)
@@ -55,11 +61,16 @@ func main() {
 		return
 	}
 
+	seedError := sqliteRepository.Seed()
+	if seedError != nil {
+		fmt.Println(seedError.Error())
+	}
+
 	// Example: Joining the list from the local db to a list retrieved from the server
 	fmt.Println(messageStruct.Update)
 	// Create a MessageStruct using the provided details
 	serverMsg := messageStruct.CreateMessage("123", "john.doe", messageStruct.Update,
 		`{"Name":"My List 1", "List":{"Map":{"apple":{"First":1,"Second":3},"pear":{"First":2,"Second":2},"rice":{"First":3,"Second":2}}}, "State":{"Map":{"pear":{"First":0,"Second":0},"rice":{"First":2,"Second":0}}}}`)
 	// Join the received list with the local list
-	joinReceivedList(serverMsg, db)
+	joinReceivedList(serverMsg, sqliteRepository)
 }
