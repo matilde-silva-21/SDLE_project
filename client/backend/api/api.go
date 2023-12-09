@@ -3,9 +3,12 @@ package api
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
+	"sdle/m/v2/communication/communicator"
 	"sdle/m/v2/database"
 	"sdle/m/v2/utils/CRDT/shoppingList"
+	"sdle/m/v2/utils/messageStruct"
 
 	"github.com/gin-gonic/gin"
 )
@@ -320,4 +323,52 @@ func SetDB(database *database.SQLiteRepository) {
 
 func GetDB() *database.SQLiteRepository {
 	return db
+}
+
+func UploadList(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	var username, cookieErr = getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error getting username from cookie"})
+		return
+	}
+
+	var sl database.ShoppingListModel
+
+	if err := c.ShouldBindUri(&sl); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list not found"})
+		return
+	}
+
+	log.Println(sl)
+
+	shoppingListModel, err := sl.Read(db)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
+		return
+	}
+
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
+
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
+	messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Write)
+	message, convErr := messageStruct.JSONToMessage(messageJSON)
+
+	if convErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error converting JSON to Message Struct"})
+	}
+
+	listsToAdd := make(chan string, 100)
+	messagesToSend := make(chan messageStruct.MessageStruct, 100)
+	messagesToSend <- message
+
+	communicator.StartClientCommunication(listsToAdd, messagesToSend)
+
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
 }

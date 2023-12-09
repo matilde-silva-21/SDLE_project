@@ -4,9 +4,12 @@ import ModalCreate from '../components/ModalCreate';
 import ModalAdd from '../components/ModalAdd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload, faDownload, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { AMQPClient } from '@cloudamqp/amqp-client' // @ts-ignore
 
 
 export default function HomePage() {
+  const backendIP = "http://localhost:8082"
+
   const [listOfLists, setlistOfLists] = useState([]);
 
   const [actualList, setActualList] = useState(null);
@@ -16,7 +19,7 @@ export default function HomePage() {
   const [quantity, setQuantity] = useState(0)
 
   const addNewItem = async (list) => {
-    const res = await fetch(`http://localhost:8080/lists/${list.url}/add`, {
+    const res = await fetch(`${backendIP}/lists/${list.url}/add`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
@@ -40,7 +43,7 @@ export default function HomePage() {
   };
 
   const deleteItem = async (item) => {
-    await fetch(`http://localhost:8080/lists/${actualList.url}/remove`, {
+    await fetch(`${backendIP}/lists/${actualList.url}/remove`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
@@ -59,7 +62,7 @@ export default function HomePage() {
 
   const selectList = async (list) => {
     console.log(list)
-    const items = await (await fetch(`http://localhost:8080/lists/${list.url}`, {
+    const items = await (await fetch(`${backendIP}/lists/${list.url}`, {
       method: "GET",
       mode: "cors",
       credentials: "include"
@@ -72,7 +75,7 @@ export default function HomePage() {
   };
 
   const deleteList = async (list) => {
-    await fetch(`http://localhost:8080/lists/remove`, {
+    await fetch(`${backendIP}/lists/remove`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
@@ -100,7 +103,7 @@ export default function HomePage() {
 
   const getLists = async () => {
     
-    let lists = await fetch("http://localhost:8080/lists", {method: "GET", mode: "cors", credentials: "include"})
+    let lists = await fetch(`${backendIP}/lists`, {method: "GET", mode: "cors", credentials: "include"})
     if (lists.status === 401) {
       document.location = "/login"
       return
@@ -122,17 +125,19 @@ export default function HomePage() {
   };
 
   const handlePush = async (list) => {
-    // Missing updating list on the server
-    // await fetch(`http://localhost:8080/lists/${list.url}/update`, {
-    //   method: 'POST',
-    //   mode: 'cors',
-    //   credentials: 'include',
-    //   body: JSON.stringify(list),
-    //   headers: {
-    //     'Accept': 'application/json',
-    //     'Content-Type': 'application/json',
-    //   } 
-    // });
+    console.log(list)
+    
+    await fetch(`${backendIP}/lists/${list.url}/upload`, {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
+      body: '',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      } 
+    })
+    
   };
 
   const handlePull = async (list) => {
@@ -201,10 +206,10 @@ export default function HomePage() {
                       </div>
                       <h1 className="font-semibold col-start-2 col-span-2 text-center mb-5 mt-5 text-xl">{actualList.name}</h1>
                       <div className='flex flex-row justify-end gap-1 col-start-4 col-span-1'>
-                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={handlePush}>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={() => handlePush(actualList)}>
                           <FontAwesomeIcon icon={faUpload} />
                         </button>
-                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={handlePull}>
+                        <button className='flex p-2 bg-pink-200 rounded-md' onClick={() => handlePull(actualList)}>
                           <FontAwesomeIcon icon={faDownload} />
                         </button>
                       </div>

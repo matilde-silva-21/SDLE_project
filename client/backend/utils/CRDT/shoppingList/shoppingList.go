@@ -3,9 +3,10 @@ package shoppingList
 import (
 	"fmt"
 	LexCounter "sdle/m/v2/utils/CRDT/lexCounter"
-	StringStandardizer "sdle/m/v2/utils/utils/stringStandardizer"
+	StringStandardizer "sdle/m/v2/utils/stringStandardizer"
 	"sdle/m/v2/utils/messageStruct"
-	"sdle/server/database"
+	"sdle/m/v2/database"
+
 	"github.com/google/uuid"
 	"encoding/json"
 )
@@ -421,15 +422,15 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 
 }
 
-func DatabaseShoppingListToCRDT(list *database.ShoppingList) ShoppingList{
+func DatabaseShoppingListToCRDT(list *database.ShoppingListModel) ShoppingList{
 
 	return CreateFromStrings((*list).Url, (*list).Name, (*list).List, (*list).State)
 
 }
 
-func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingList{
+func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingListModel{
 
-	return &database.ShoppingList{
+	return &database.ShoppingListModel{
 		Id:    id,
 		Name:  list.name,
 		Url:   list.url,

@@ -86,6 +86,7 @@ func CreateConsumerChannel(ch *amqp.Channel, queue *amqp.Queue)  <-chan amqp.Del
 
 // For example, messages with JSON payload should use application/json
 func PublishMessage(contentType string, body string, ch *amqp.Channel, exchangeName string, topics ...string) {
+	log.Println(ch.IsClosed())
 	for _, topic := range topics {
 		err := ch.Publish(
 			exchangeName,                   // exchange

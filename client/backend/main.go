@@ -54,7 +54,7 @@ func main() {
 
 	router.Use(cors.New(cors.Config{
 		AllowCredentials: true,
-		AllowOrigins: []string{"http://localhost:3000"},
+		AllowOrigins: []string{"http://localhost:5173"},
 		AllowMethods: []string{"POST", "GET"},
 		ExposeHeaders: []string{"Access-Control-Allow-Headers"},
 		AllowHeaders: []string{"Content-Type, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin"},
@@ -67,6 +67,7 @@ func main() {
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
+	router.POST("lists/:url/upload", api.UploadList)
 
-	router.Run("localhost:8080")
+	router.Run("localhost:8082")
 }

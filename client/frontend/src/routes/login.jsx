@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 export default function LoginPage() {
+    const backendIP = "http://localhost:8082"
     const [username, setUsername] = useState("")
     
     useEffect(() => {
@@ -21,7 +22,7 @@ export default function LoginPage() {
     async function login(event) {
         event.preventDefault()
 
-        const login = await fetch("http://localhost:8080/login", {
+        const login = await fetch(`${backendIP}/login`, {
             method: 'POST',
             body: JSON.stringify({'username': `${username}`}),
             mode: 'cors',

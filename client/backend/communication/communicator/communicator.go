@@ -1,6 +1,7 @@
 package communicator
 
 import (
+	"log"
 	"sdle/m/v2/communication/rabbitMQ"
 	"sdle/m/v2/utils/messageStruct"
 
@@ -19,10 +20,11 @@ func addListToClient(ch *amqp.Channel, queue *amqp.Queue, exchangeName string, l
 }
 
 func sendMessageToServer(ch *amqp.Channel, exchangeName string, messagesToSend chan messageStruct.MessageStruct){
-
+	
 	for {
 		select {
 			case message:= <-messagesToSend:
+				log.Println(ch.IsClosed())
 				rabbbitmq.PublishMessage("text/json", string(message.ToJSON()), ch, exchangeName, "server/url."+message.ListURL)
 		}
 	}

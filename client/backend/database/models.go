@@ -322,11 +322,6 @@ func GetIDByURL(r *SQLiteRepository, url string) (int64, error) {
 	err := r.db.QueryRow("SELECT Id FROM ShoppingList WHERE Url = ?", url).Scan(&id)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// Return a custom error indicating that no matching URL was found
-			return 0, fmt.Errorf("ShoppingList with URL '%s' not found", url)
-		}
-		// Return other errors as is
 		return 0, err
 	}
 

@@ -3,6 +3,7 @@ import Popup from 'reactjs-popup'
 import '../styles/Modal.css'
 
 export default function ModalAdd({ lists, setLists }) {
+    const backendIP = "http://localhost:8082"
     const [url, setUrl] = useState("")
 
     async function addList() {

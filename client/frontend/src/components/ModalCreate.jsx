@@ -4,11 +4,12 @@ import '../styles/Modal.css'
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ModalCreate({ lists, setLists }) {
+    const backendIP = "http://localhost:8082"
     const [name, setName] = useState("")
 
     async function createList() {
       const url = uuidv4();
-      const response = await fetch("http://localhost:8080/lists/create", {
+      const response = await fetch(`${backendIP}/lists/create`, {
           method: "POST",
           body: JSON.stringify({ "name": name, "url": url }),
           mode: "cors",
