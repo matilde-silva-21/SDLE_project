@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sdle/m/v2/database"
+	"sdle/m/v2/utils/CRDT/shoppingList"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +23,7 @@ func GetAllItems(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, items)
 }
 
-func GetItem(c* gin.Context) {
+func GetItem(c *gin.Context) {
 	var i database.Item
 
 	if err := c.ShouldBindUri(&i); err != nil {
@@ -52,19 +53,29 @@ func CreateShoppingList(c *gin.Context) {
 		return
 	}
 
-	var shoppingList database.ShoppingList
-	if err := c.ShouldBind(&shoppingList); err != nil {
+	var shoppingListModel database.ShoppingListModel
+	if err := c.ShouldBind(&shoppingListModel); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
 		return
 	}
+	fmt.Println(shoppingListModel)
 
-	newShoppingListModel, createErr := shoppingList.Create(db)
+	shoppingListCRDT := shoppingList.Create(shoppingListModel.Name)
+	fmt.Println(shoppingListCRDT)
+	listCRDT := shoppingListCRDT.ListFormatForDatabase()
+	stateCRDT := shoppingListCRDT.StateFormatForDatabase()
+
+	shoppingListModel.List = listCRDT
+	shoppingListModel.State = stateCRDT
+
+	newShoppingListModel, createErr := shoppingListModel.Create(db)
+	fmt.Println(newShoppingListModel)
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
 		return
 	}
 
-	newShoppingList := newShoppingListModel.(*database.ShoppingList)
+	newShoppingList := newShoppingListModel.(*database.ShoppingListModel)
 
 	var userList database.UserList
 	userList.ListID = newShoppingList.Id
@@ -74,7 +85,7 @@ func CreateShoppingList(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating user list"})
 		return
 	}
-	
+
 	c.IndentedJSON(http.StatusOK, newShoppingList)
 }
 
@@ -84,14 +95,14 @@ func RemoveShoppingList(c *gin.Context) {
 		return
 	}
 
-	var shoppingList database.ShoppingList
+	var shoppingList database.ShoppingListModel
 	if err := c.ShouldBind(&shoppingList); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
 		return
 	}
 
 	shoppingListModel, _ := shoppingList.Read(db)
-	shoppingListObj := shoppingListModel.(*database.ShoppingList)
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
 
 	username, cookieErr := getUsernameFromCookie(c)
 	if cookieErr != nil {
@@ -136,7 +147,7 @@ func GetShoppingLists(c *gin.Context) {
 	if readErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, "")
 	}
-	
+
 	c.IndentedJSON(http.StatusOK, userLists)
 }
 
@@ -147,7 +158,7 @@ func GetShoppingList(c *gin.Context) {
 		return
 	}
 
-	var shoppingList database.ShoppingList
+	var shoppingList database.ShoppingListModel
 
 	if err := c.ShouldBindUri(&shoppingList); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
@@ -161,10 +172,10 @@ func GetShoppingList(c *gin.Context) {
 		return
 	}
 
-	shoppingListObj := shoppingListModel.(*database.ShoppingList)
-	
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
+
 	items, err := shoppingListObj.GetShoppingListItems(db)
-	
+
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error retrieving shopping list items"})
 		return
@@ -191,7 +202,7 @@ func AddItemToShoppingList(c *gin.Context) {
 		return
 	}
 
-	var shoppingList database.ShoppingList
+	var shoppingList database.ShoppingListModel
 	if err := c.ShouldBindUri(&shoppingList); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
 		return
@@ -203,7 +214,7 @@ func AddItemToShoppingList(c *gin.Context) {
 		return
 	}
 
-	shoppingListObj := shoppingListModel.(*database.ShoppingList)
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
 	var item database.Item
 
 	bindingErr := c.ShouldBind(&item)
@@ -303,7 +314,7 @@ func isLoggedIn(c *gin.Context) bool {
 	return (err == nil)
 }
 
-func SetDB (database *database.SQLiteRepository) {
+func SetDB(database *database.SQLiteRepository) {
 	db = database
 }
 

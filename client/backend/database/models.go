@@ -1,8 +1,9 @@
 package database
 
 import (
-	"fmt"	
-);
+	"fmt"
+	"database/sql"
+)
 
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
@@ -13,11 +14,11 @@ type Model interface {
 	ReadAll(r *SQLiteRepository) ([]Model, error)
 }
 
-type ShoppingList struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name" form:"listName"`
-	Url  string `json:"url" uri:"url"`
-	List string `json:"list"`
+type ShoppingListModel struct {
+	Id    int64  `json:"id"`
+	Name  string `json:"name" form:"listName"`
+	Url   string `json:"url" uri:"url" form:"listUrl"`
+	List  string `json:"list"`
 	State string `json:"state"`
 }
 
@@ -26,11 +27,11 @@ type User struct {
 }
 
 type Item struct {
-	Id   int64        `json:"id" uri:"id"`
-	Name string       `json:"name" form:"itemName"`
-	Done bool         `json:"done" form:"itemDone"`
-	Quantity int64	  `json:"quantity"`
-	List ShoppingList `json:"list"`
+	Id       int64             `json:"id" uri:"id"`
+	Name     string            `json:"name" form:"itemName"`
+	Done     bool              `json:"done" form:"itemDone"`
+	Quantity int64             `json:"quantity"`
+	List     ShoppingListModel `json:"list"`
 }
 
 type UserList struct {
@@ -80,7 +81,7 @@ func (item *Item) Delete(r *SQLiteRepository) error {
 
 func (item *Item) Update(r *SQLiteRepository, updated Model) error {
 	updatedItem := updated.(*Item)
-	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)", 
+	res, err := r.db.Exec("UPDATE Item SET Name = (?), Done = (?), Quantity = (?), List = (?) WHERE Id = (?)",
 		updatedItem.Name, updatedItem.Done, updatedItem.Quantity, updatedItem.List.Id, &item.Id)
 
 	if err != nil {
@@ -198,7 +199,7 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 	return users, nil
 }
 
-func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
+func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingListModel, error) {
 	fmt.Println(user.Username)
 	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
 
@@ -208,10 +209,10 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 
 	defer rows.Close()
 
-	var userLists []ShoppingList
+	var userLists []ShoppingListModel
 
 	for rows.Next() {
-		var ul ShoppingList
+		var ul ShoppingListModel
 
 		if scanErr := rows.Scan(&ul.Id, &ul.Name, &ul.Url); scanErr != nil {
 			return nil, scanErr
@@ -225,7 +226,7 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 
 // SHOPPING LIST MODEL METHODS
 
-func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
+func (list *ShoppingListModel) CreateTable(r *SQLiteRepository) error {
 	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List TEXT, State TEXT)")
 
@@ -235,7 +236,7 @@ func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
 	return nil
 }
 
-func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
+func (list *ShoppingListModel) Create(r *SQLiteRepository) (Model, error) {
 	_, err := r.db.Exec("INSERT INTO ShoppingList(Name, Url, List, State) VALUES (?, ?, ? ,?)", &list.Name, &list.Url, &list.List, &list.State)
 
 	if err != nil {
@@ -246,7 +247,7 @@ func (list *ShoppingList) Create(r *SQLiteRepository) (Model, error) {
 	return newList, nil
 }
 
-func (list *ShoppingList) Delete(r *SQLiteRepository) error {
+func (list *ShoppingListModel) Delete(r *SQLiteRepository) error {
 	_, err := r.db.Exec("DELETE FROM ShoppingList WHERE Id = (?)", list.Id)
 
 	if err != nil {
@@ -256,14 +257,27 @@ func (list *ShoppingList) Delete(r *SQLiteRepository) error {
 	return nil
 }
 
-func (list *ShoppingList) Update(r *SQLiteRepository, updated Model) error {
+func (list *ShoppingListModel) Update(r *SQLiteRepository, updated Model) error {
+	updatedList := updated.(*ShoppingListModel)
+	res, err := r.db.Exec("UPDATE ShoppingList SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil || rows == 0 {
+		return err
+	}
+
 	return nil
 }
 
-func (list *ShoppingList) Read(r *SQLiteRepository) (Model, error) {
+func (list *ShoppingListModel) Read(r *SQLiteRepository) (Model, error) {
 	res := r.db.QueryRow("SELECT * FROM ShoppingList WHERE Url = ?", &list.Url)
 
-	var updated ShoppingList
+	var updated ShoppingListModel
 	if err := res.Scan(&updated.Id, &updated.Name, &updated.Url, &updated.List, &updated.State); err != nil {
 		return nil, err
 	}
@@ -271,7 +285,7 @@ func (list *ShoppingList) Read(r *SQLiteRepository) (Model, error) {
 	return &updated, nil
 }
 
-func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
+func (list *ShoppingListModel) ReadAll(r *SQLiteRepository) ([]Model, error) {
 	rows, err := r.db.Query("SELECT * FROM ShoppingList")
 
 	if err != nil {
@@ -283,7 +297,7 @@ func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 	var lists []Model
 
 	for rows.Next() {
-		var l ShoppingList
+		var l ShoppingListModel
 		if err := rows.Scan(&l.Id); err != nil {
 			return nil, err
 		}
@@ -293,7 +307,7 @@ func (list *ShoppingList) ReadAll(r *SQLiteRepository) ([]Model, error) {
 	return lists, nil
 }
 
-func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, error) {
+func (list *ShoppingListModel) GetShoppingListItems(r *SQLiteRepository) ([]Item, error) {
 	rows, err := r.db.Query("SELECT * FROM Item WHERE List = (?)", &list.Id)
 
 	if err != nil {
@@ -315,6 +329,22 @@ func (list *ShoppingList) GetShoppingListItems(r *SQLiteRepository) ([]Item, err
 	}
 
 	return items, nil
+}
+
+func GetIDByURL(r *SQLiteRepository, url string) (int64, error) {
+	var id int64
+	err := r.db.QueryRow("SELECT Id FROM ShoppingList WHERE Url = ?", url).Scan(&id)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Return a custom error indicating that no matching URL was found
+			return 0, fmt.Errorf("ShoppingList with URL '%s' not found", url)
+		}
+		// Return other errors as is
+		return 0, err
+	}
+
+	return id, nil
 }
 
 // USER LIST MODEL METHODS

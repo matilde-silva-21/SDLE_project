@@ -5,6 +5,7 @@ import (
 	LexCounter "sdle/server/utils/CRDT/lexCounter"
 	StringStandardizer "sdle/server/utils/stringStandardizer"
 	"sdle/server/utils/messageStruct"
+	"sdle/server/database"
 	"github.com/google/uuid"
 	"encoding/json"
 )
@@ -369,7 +370,7 @@ func (list ShoppingList) ConvertToMessageFormat(username string, action messageS
 
 }
 
-func MessageFormatToCRDT(body []byte) ShoppingList{
+func MessageByteToCRDT(body []byte) ShoppingList{
 
 	type dummyStruct struct {
 		Name string
@@ -394,6 +395,46 @@ func MessageFormatToCRDT(body []byte) ShoppingList{
 		return fake
 	}
 
-	return createFromArguments(mess.ListURL, dummyVar.Name, dummyVar.List, dummyVar.State)
+	return createFromArguments(dummyVar.Name, mess.ListURL, dummyVar.List, dummyVar.State)
+
+}
+
+func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
+
+	type dummyStruct struct {
+		Name string
+		List LexCounter.LexCounter[string, int]
+		State LexCounter.LexCounter[string, int]
+	}
+
+	var dummyVar dummyStruct
+	var fake ShoppingList
+
+	err := json.Unmarshal([]byte(mess.Body), &dummyVar)
+
+	if(err != nil){
+		fmt.Println("Error 2:", err)
+		return fake
+	}
+
+	return createFromArguments(dummyVar.Name, mess.ListURL, dummyVar.List, dummyVar.State)
+
+}
+
+func DatabaseShoppingListToCRDT(list *database.ShoppingList) ShoppingList{
+
+	return CreateFromStrings((*list).Url, (*list).Name, (*list).List, (*list).State)
+
+}
+
+func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingList{
+
+	return &database.ShoppingList{
+		Id:    id,
+		Name:  list.name,
+		Url:   list.url,
+		List:  list.ListFormatForDatabase(),
+		State: list.StateFormatForDatabase(),
+	}
 
 }

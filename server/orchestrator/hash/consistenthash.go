@@ -7,6 +7,7 @@ import (
 	"sync"
 	"slices"
 	"strings"
+	"sdle/server/utils/maps"
 
 	"github.com/zeromicro/go-zero/core/lang"
 )
@@ -131,9 +132,13 @@ func (h *ConsistentHash) Get(v any) (any, bool) {
 // first key greater than or equal to the hash, and retrieves the nodes associated with that
 // key and the next two keys in the hash ring. If successful, it returns the slice of closest
 // nodes and true; otherwise, it returns nil and false.
-func (h *ConsistentHash) GetClosestNodes(v any, numNodes int) ([]any, bool) {
+func (h *ConsistentHash) GetClosestNodesName(v any, numNodes int) ([]any, bool) {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
+
+	if(numNodes == -1) {
+		numNodes = len(h.GetAllActiveIPs())
+	}
 
 	if len(h.ring) == 0 {
 		return nil, false
@@ -146,6 +151,7 @@ func (h *ConsistentHash) GetClosestNodes(v any, numNodes int) ([]any, bool) {
 	}) % len(h.keys)
 
 	var closestNodes []any
+
 	for i := 0; (len(closestNodes) < numNodes) && (len(closestNodes) < len(h.nodes)); i++ {
 		keyIndex := (index + i) % len(h.keys)
 		nodes := h.ring[h.keys[keyIndex]]
@@ -162,6 +168,30 @@ func (h *ConsistentHash) GetClosestNodes(v any, numNodes int) ([]any, bool) {
 	}
 
 	return closestNodes, true
+}
+
+func (h *ConsistentHash) GetClosestNodesIP(v any, numNodes int) ([]string, bool) {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+
+	names, _ := h.GetClosestNodesName(v, numNodes)
+	ipList := []string{}
+
+	for _, item := range names {
+		if str, ok := item.(string); ok {
+			ipList = append(ipList, h.nodes[str])
+		} else {
+			// Handle the case where the assertion fails
+			fmt.Printf("Item %v is not a string\n", item)
+		}
+	}
+
+	return ipList, true
+}
+
+
+func (h *ConsistentHash) GetAllActiveIPs() []string{
+	return maps.Values(h.nodes)
 }
 
 func (h *ConsistentHash) GetServerIP(server string) string {

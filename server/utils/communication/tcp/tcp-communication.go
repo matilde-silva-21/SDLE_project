@@ -57,11 +57,22 @@ func SendMessage(conn *net.TCPConn, message string) {
 	}
 }
 
-// ReadMessage reads a message from the TCP connection (non-blocking read).
-func ReadMessage(conn *net.TCPConn) ([]byte, error) {
+func KeepConnectionAlive(conn *net.TCPConn) {
+	for {
+		
+	}
+}
+
+// ReadMessage reads a message from the TCP connection (non-blocking read if numberOfMilliseconds  != -1).
+func ReadMessage(conn *net.TCPConn, numberOfMilliseconds int) ([]byte, error) {
 	buffer := make([]byte, 1024)
 
-	err := conn.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
+	if(numberOfMilliseconds == -1){
+		numberOfMilliseconds = 0
+	}
+	
+	timeout := time.Duration(numberOfMilliseconds) * time.Millisecond
+	err := conn.SetReadDeadline(time.Now().Add(timeout))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -73,7 +84,7 @@ func ReadMessage(conn *net.TCPConn) ([]byte, error) {
 		}
 
 		if err.Error() == "EOF" {
-			log.Println("Connection closed by remote side.")
+			log.Printf("Connection %s closed by remote side.", conn.RemoteAddr().String())
 		} else {
 			log.Print("Error reading message: ", err)
 		}
@@ -88,7 +99,7 @@ func ReadMessage(conn *net.TCPConn) ([]byte, error) {
 // RespondPing responds to a ping message with a pong.
 func RespondPing(conn *net.TCPConn) {
 	for {
-		message, _ := ReadMessage(conn)
+		message, _ := ReadMessage(conn, 1)
 		log.Printf("Received ping: %s, now sending pong...", message)
 		SendMessage(conn, "PONG")
 		time.Sleep(1 * time.Second) // Adjust the delay as needed
@@ -102,7 +113,7 @@ func SendPing(conn *net.TCPConn) {
 		log.Println("Sending ping...")
 		startTime := time.Now()
 		SendMessage(conn, "PING")
-		response, _ := ReadMessage(conn)
+		response, _ := ReadMessage(conn, 1)
 		elapsed := time.Since(startTime)
 		log.Printf("Received: %s, RTT: %s", response, elapsed)
 		time.Sleep(1 * time.Second) // Adjust the delay as needed
@@ -163,7 +174,7 @@ func ServerSocketExample(){
         }
 
         // Handle client connection.....
-		message, err := ReadMessage(conn)
+		message, err := ReadMessage(conn, 1)
 		if(len(message) > 0) {
 
 			log.Printf("[x] %s", message)
