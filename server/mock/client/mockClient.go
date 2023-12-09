@@ -125,7 +125,7 @@ func main(){
 
 	go rabbitmq.PrintIncomingMessages(messages)
 
-	body := ShopListExample().ConvertToMessageFormat("john.doe", messageStruct.Write)
+	body := ShopListExample().ConvertToMessageFormat("john.doe", messageStruct.Delete)
 	
 	for {
 

@@ -158,8 +158,13 @@ func ExecuteQuorum(conn *net.TCPConn, chanPair ChanPair, payload messageStruct.M
 }
 
 func ReadAndMergeCRDT(listResponses *(map[int]([]byte)), payload messageStruct.MessageStruct, sqliteRepository *database.SQLiteRepository) (shoppingList.ShoppingList, error){
-
+	
 	finalList := shoppingList.MessageStructToCRDT(payload)
+
+	if(payload.Action == messageStruct.Read){ // If the action is Read, no need to merge the list that comes in the payload
+		finalList.ResetShoppingList()
+	}
+
 	id, _ := database.GetIDByURL(sqliteRepository, payload.ListURL)
 
 	var err error
@@ -242,7 +247,15 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]by
 			
 	
 			log.Print("Sending new version to Quorum Participants.")
-			newCRDTMessage := mergedCRDT.ConvertToMessageFormat(payload.Username, payload.Action)
+
+			var action messageStruct.MessageType
+			if(payload.Action == messageStruct.Read){
+				action = messageStruct.Write
+			} else {
+				action = payload.Action
+			}
+
+			newCRDTMessage := mergedCRDT.ConvertToMessageFormat(payload.Username, action)
 
 			for _, ch := range *channelsMap {
 				ch.channel <- newCRDTMessage
