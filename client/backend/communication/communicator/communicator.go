@@ -55,8 +55,9 @@ func StartClientCommunication(listsToAdd chan string, messagesToSend chan messag
 	go addListToClient(ch, q, exchangeName, listsToAdd)
 	
 	messages := rabbbitmq.CreateConsumerChannel(ch, q)
-	go rabbbitmq.HandleIncomingMessages(messages)
-
+	
 	go sendMessageToServer(ch, exchangeName, messagesToSend)
+	
+	rabbbitmq.HandleIncomingMessages(messages)
 
 }

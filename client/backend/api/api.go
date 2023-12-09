@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sdle/m/v2/communication/communicator"
+	//"sdle/m/v2/communication/communicator"
 	"sdle/m/v2/database"
 	"sdle/m/v2/utils/CRDT/shoppingList"
 	"sdle/m/v2/utils/messageStruct"
@@ -325,6 +325,13 @@ func GetDB() *database.SQLiteRepository {
 	return db
 }
 
+func SetMessagesToSendChannel(ch chan messageStruct.MessageStruct) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Set("messagesToSend", ch)
+        c.Next()
+    }
+}
+
 func UploadList(c *gin.Context) {
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
@@ -363,12 +370,15 @@ func UploadList(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error converting JSON to Message Struct"})
 	}
 
-	listsToAdd := make(chan string, 100)
-	messagesToSend := make(chan messageStruct.MessageStruct, 100)
+	ch, ok := c.Get("messagesToSend")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    messagesToSend := ch.(chan messageStruct.MessageStruct)
+
 	messagesToSend <- message
-
-	communicator.StartClientCommunication(listsToAdd, messagesToSend)
-
 
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
 }

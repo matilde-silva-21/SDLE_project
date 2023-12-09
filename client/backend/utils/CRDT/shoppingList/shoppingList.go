@@ -424,7 +424,7 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 
 func DatabaseShoppingListToCRDT(list *database.ShoppingListModel) ShoppingList{
 
-	return CreateFromStrings((*list).Url, (*list).Name, (*list).List, (*list).State)
+	return CreateFromStrings((*list).Name, (*list).Url, (*list).List, (*list).State)
 
 }
 
