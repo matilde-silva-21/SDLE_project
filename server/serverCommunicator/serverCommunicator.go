@@ -33,10 +33,7 @@ func GetOutboundIP() string {
 }
 
 
-func ConnectToOrchestrator(outboundIP string, sqliteRepository *database.SQLiteRepository) {
-
-	orchestratorAddress := "localhost:8080"
-	backupAddress := "localhost:8081"
+func ConnectToOrchestrator(orchestratorAddress, backupAddress, outboundIP string, sqliteRepository *database.SQLiteRepository) {
 	
 	orchTcpAddr, err := net.ResolveTCPAddr("tcp", orchestratorAddress)
 
@@ -442,14 +439,14 @@ func ParticipateInQuorum(conn *net.TCPConn, sqliteRepository *database.SQLiteRep
 }
 
 
-func StartServerCommunication(sqliteRepository *database.SQLiteRepository) {
+func StartServerCommunication(orchestratorAddress, backupAddress string, sqliteRepository *database.SQLiteRepository) {
 
 	
 	outboundIP := GetOutboundIP()
 
 	// <------------ Connect To orchestrator ------------>
 	
-	go ConnectToOrchestrator(outboundIP, sqliteRepository)
+	go ConnectToOrchestrator(orchestratorAddress, backupAddress, outboundIP, sqliteRepository)
 
 	// <------------------------------------------------->
 	

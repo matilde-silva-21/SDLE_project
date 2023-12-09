@@ -86,12 +86,7 @@ func readTCPConnection(conn *net.TCPConn, hashRing *hash.ConsistentHash, outboun
 
 func createTCPListener() (*net.TCPListener, error){
 
-	port := "8080" // Default orchestrator port
-	if len(os.Args) > 1 {
-		port = os.Args[1]
-	}
-
-	address := "localhost:"+port // Orchestrator address
+	address := os.Args[1] // Orchestrator address
 	
 	listener, err := tcp.CreateListenerConnection(address)
 
@@ -99,7 +94,7 @@ func createTCPListener() (*net.TCPListener, error){
 		return nil, err
 	}
 
-	log.Printf("[TCP] Orchestrator is listening on port %s\n\n", port)
+	log.Printf("[TCP] Orchestrator is listening on %s\n\n", listener.Addr())
 
 	return listener, nil
 }
@@ -107,17 +102,15 @@ func createTCPListener() (*net.TCPListener, error){
 
 func waitToStartOperation() *net.TCPAddr{
 
-	port := "8080" // Default orchestrator port
-	otherOrchestratorPort := "8081"
-
-	if len(os.Args) > 1 {
-		port = os.Args[1]
-		if(port == "8081"){
-			otherOrchestratorPort = "8080"
-		}
+	var backupAddress string
+	if len(os.Args) > 2 {
+		backupAddress = os.Args[2]
+	} else {
+		fmt.Println("Not enough arguments.\nUsage: go run orchestrator.go <current_orchestrator_address> <backup_orchestrator_address>.")
+		return nil
 	}
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", "localhost:"+otherOrchestratorPort)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", backupAddress)
 
 	if err != nil {
 		log.Printf("Couldn't resolve other orchestrator's TCP address. Starting Services...\n")
@@ -150,6 +143,9 @@ func main() {
 	// <----------------------- Check if another orchestrator is already operating, if so, do nothing. ----------------------->
 
 	tcpAddr := waitToStartOperation()
+	if(tcpAddr == nil){
+		return
+	}
 
 	// <-------------------------------------------------------------------------------------------------->
 		
