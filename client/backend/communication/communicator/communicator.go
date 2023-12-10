@@ -76,11 +76,11 @@ func ReadAndMergeCRDT(serverMsg messageStruct.MessageStruct, repo *database.SQLi
 		return dummy, err
 	}
 	localCRDT := shoppingList.DatabaseShoppingListToCRDT(localList.(*database.ShoppingListModel))
-	fmt.Println(localCRDT)
-	fmt.Println()
-
+	fmt.Println(remoteList)
+	
 	// Join the lists
 	localCRDT.JoinShoppingList(remoteList)
+	fmt.Println(localCRDT)
 
 	return localCRDT, nil
 }

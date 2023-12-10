@@ -437,3 +437,14 @@ func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingList
 	}
 
 }
+
+func (list ShoppingList) GetItemsAndTheirQuantity() map[string]int{
+
+    answer := make(map[string]int)
+
+    for key, value := range list.list.Map{
+        answer[key] = value.Second
+    }
+
+    return answer
+}

@@ -160,14 +160,14 @@ func GetShoppingList(c *gin.Context) {
 		return
 	}
 
-	var shoppingList database.ShoppingListModel
+	var sl database.ShoppingListModel
 
-	if err := c.ShouldBindUri(&shoppingList); err != nil {
+	if err := c.ShouldBindUri(&sl); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
 		return
 	}
 
-	shoppingListModel, err := shoppingList.Read(db)
+	shoppingListModel, err := sl.Read(db)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
@@ -175,8 +175,15 @@ func GetShoppingList(c *gin.Context) {
 	}
 
 	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
 
-	items, err := shoppingListObj.GetShoppingListItems(db)
+	mapItems := shoppingListCRDT.GetItemsAndTheirQuantity()
+	finalItems := []database.Item {}
+
+	for name, quantity := range mapItems{
+		item := database.Item {Id: 0, Name: name, Done: shoppingListCRDT.CheckIfItemBought(name), Quantity: int64(quantity), List: *shoppingListObj}
+		finalItems = append(finalItems, item)
+	}
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error retrieving shopping list items"})
@@ -195,7 +202,7 @@ func GetShoppingList(c *gin.Context) {
 		}
 	}
 
-	c.IndentedJSON(http.StatusOK, items)
+	c.IndentedJSON(http.StatusOK, finalItems)
 }
 
 func AddItemToShoppingList(c *gin.Context) {

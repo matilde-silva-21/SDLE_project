@@ -190,17 +190,6 @@ func (list ShoppingList) CheckItemQuantity(item string) int {
 	return entry.Second
 }
 
-func (list ShoppingList) GetItemsAndTheirQuantity() map[string]int{
-
-	answer := make(map[string]int)
-
-	for key, value := range list.list.Map{
-		answer[key] = value.Second
-	}
-
-	return answer
-}
-
 // Wipes all history of the list and state but not the object itself, it keeps its name and URL.
 func (list *ShoppingList) ResetShoppingList() {
 	
@@ -366,6 +355,16 @@ func (list ShoppingList) StateFormatForDatabase() string{
 	return string(jsonState)
 }
 
+func (list ShoppingList) GetItemsAndTheirQuantity() map[string]int{
+
+    answer := make(map[string]int)
+
+    for key, value := range list.list.Map{
+        answer[key] = value.Second
+    }
+
+    return answer
+}
 
 func (list ShoppingList) ConvertToMessageFormat(username string, action messageStruct.MessageType) []byte{
 

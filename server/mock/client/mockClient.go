@@ -127,7 +127,7 @@ func main(){
 	go rabbitmq.PrintIncomingMessages(messages)
 
 	crdt := ShopListExample()
-	crdt.Url = "c80e0d62-b924-46b5-98e8-7a141b8b1e15"
+	crdt.Url = "2990f9e7-cbbc-4852-9906-471436639829"
 	fmt.Println(crdt)
 	body := crdt.ConvertToMessageFormat("john.doe", messageStruct.Write)
 	
