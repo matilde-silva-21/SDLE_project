@@ -237,7 +237,9 @@ export default function HomePage() {
                               <input type="checkbox" checked={item.done} onChange={() => handleCheckboxChange(index)}/>
                             </div>
                             <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.name}</div>
-                            <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.quantity}</div>
+                            <div className={`grid row-start-${index + 1}`}>
+                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md`} onClick={() => updateItem(item)}>{item.quantity}</button>
+                            </div>
                             <div className={`grid row-start-${index + 1}`}>
                               <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
                             </div>
@@ -249,13 +251,12 @@ export default function HomePage() {
                 )}
                 {
                   actualList && 
-                  <div className='flex flex-col justify-center mt-1'>
-                    <div className='grid grid-cols-4 gap-2'>
-                      <div className='grid col-start-2 justify-center'><input className='rounded-md p-1 justify-center text-center' type='text' id='itemName' value={item} placeholder='name' onChange={(e) => setItem(e.target.value)}></input></div>
-                      <div className='grid col-start-3 justify-center'><input className='[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none rounded-md p-1 text-center' type='number' id='itemQuantity' value={quantity} onChange={(e) => setQuantity(e.target.value)}></input></div>
-                      <div className='grid col-start-4'><button className=" bg-pink-200 p-1 rounded-md" onClick={() => addNewItem(actualList)}>Add Item</button></div>
+                    <div className='grid grid-cols-4 gap-20 mt-7'>
+                      <div className='grid col-start-1 col-auto'></div>
+                      <div className='grid col-start-2 justify-center col-span-1'><input className='rounded-md p-1 justify-center text-center bg-pink-300' type='text' id='itemName' value={item} placeholder='name' onChange={(e) => setItem(e.target.value)}></input></div>
+                      <div className='grid col-start-3 justify-center col-span-1'><input className='rounded-md bg-pink-300 p-1 text-center max-w-s' type='number' id='itemQuantity' value={quantity} onChange={(e) => setQuantity(e.target.value)}></input></div>
+                      <div className='grid col-start-4 col-span-1'><button className=" bg-pink-300 p-1 rounded-md" onClick={() => addNewItem(actualList)}>Add Item</button></div>
                     </div>
-                  </div>
                 }
               </div>
             </div>
