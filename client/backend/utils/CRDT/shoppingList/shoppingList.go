@@ -3,9 +3,9 @@ package shoppingList
 import (
 	"fmt"
 	LexCounter "sdle/m/v2/utils/CRDT/lexCounter"
-	StringStandardizer "sdle/m/v2/utils/utils/stringStandardizer"
+	StringStandardizer "sdle/m/v2/utils/stringStandardizer"
 	"sdle/m/v2/utils/messageStruct"
-	"sdle/server/database"
+	"sdle/m/v2/database"
 	"github.com/google/uuid"
 	"encoding/json"
 )
@@ -42,6 +42,9 @@ func CreateFromStrings(listName, url, list, state string) ShoppingList {
 
 	listObject := LexCounter.Create[string, int]("list")
 	stateObject := LexCounter.Create[string, int]("state")
+
+	fmt.Println(listObject)
+	fmt.Println(stateObject)
 
 	err := json.Unmarshal([]byte(list), &listObject)
 
@@ -382,7 +385,6 @@ func MessageByteToCRDT(body []byte) ShoppingList{
 	var fake ShoppingList
 
 	mess, err := messageStruct.JSONToMessage(body)
-
 	if(err != nil){
 		fmt.Println("Error 1:", err)
 		return fake
@@ -421,15 +423,14 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 
 }
 
-func DatabaseShoppingListToCRDT(list *database.ShoppingList) ShoppingList{
-
+func DatabaseShoppingListToCRDT(list *database.ShoppingListModel) ShoppingList{
 	return CreateFromStrings((*list).Url, (*list).Name, (*list).List, (*list).State)
 
 }
 
-func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingList{
+func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingListModel{
 
-	return &database.ShoppingList{
+	return &database.ShoppingListModel{
 		Id:    id,
 		Name:  list.name,
 		Url:   list.url,

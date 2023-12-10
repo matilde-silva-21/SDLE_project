@@ -35,7 +35,7 @@ func (r *SQLiteRepository) CreateTables() error {
 }
 
 func (r *SQLiteRepository) Seed() error {
-	sl1 := ShoppingListModel{Id: 1, Name: "My Shopping List 1", Url: "testurl", List: "", State: ""}
+	sl1 := ShoppingListModel{Id: 1, Name: "My List 1", Url: "123", List: "{\"Map\":{\"apple\":{\"First\":1,\"Second\":3}}}", State: "{\"Map\":{}}"}
 	sl2 := ShoppingListModel{Id: 2, Name: "My Shopping List 1", Url: "test", List: "", State: ""}
 
 	var seedItems = []Model{
