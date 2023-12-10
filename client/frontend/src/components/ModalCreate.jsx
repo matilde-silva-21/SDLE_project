@@ -4,7 +4,9 @@ import '../styles/Modal.css'
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ModalCreate({ lists, setLists }) {
-    const backendIP = "http://localhost:8082"
+    const numOfInstances = window.location.host.split(':')[1] - 5173
+    const port = parseInt(import.meta.env.VITE_BACKEND_PORT) + numOfInstances
+    const backendIP = `http://localhost:${port}`
     const [name, setName] = useState("")
 
     async function createList() {

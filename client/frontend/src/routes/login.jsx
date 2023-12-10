@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
 
 export default function LoginPage() {
-    const backendIP = "http://localhost:8082"
+    const numOfInstances = window.location.host.split(':')[1] - 5173
+    const port = parseInt(import.meta.env.VITE_BACKEND_PORT) + numOfInstances
+    const backendIP = `http://localhost:${port}`
     const [username, setUsername] = useState("")
     
     useEffect(() => {

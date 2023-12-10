@@ -4,11 +4,11 @@ import ModalCreate from '../components/ModalCreate';
 import ModalAdd from '../components/ModalAdd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload, faDownload, faCopy } from '@fortawesome/free-solid-svg-icons';
-import { AMQPClient } from '@cloudamqp/amqp-client' // @ts-ignore
-
 
 export default function HomePage() {
-  const backendIP = "http://localhost:8082"
+  const numOfInstances = window.location.host.split(':')[1] - 5173
+  const port = parseInt(import.meta.env.VITE_BACKEND_PORT) + numOfInstances
+  const backendIP = `http://localhost:${port}`
 
   const [listOfLists, setlistOfLists] = useState([]);
 
@@ -31,13 +31,12 @@ export default function HomePage() {
     });
 
     const itemObj = await res.json()
-    console.log(itemObj)
 
     setActualList({
       ...list,
       items: [...(list.items ?? []), itemObj]
     })
-    console.log(actualList)
+
     setItem("");
     setQuantity(0);
   };
@@ -141,7 +140,7 @@ export default function HomePage() {
   };
 
   const handlePull = async (list) => {
-    const res = await fetch(`http://localhost:8082/lists/${list.url}/fetch`, {
+    const res = await fetch(`${backendIP}/lists/${list.url}/fetch`, {
        method: 'POST',
        mode: 'cors',
        credentials: 'include',
@@ -229,7 +228,6 @@ export default function HomePage() {
                     </div>
                     { actualList.items ? 
                       actualList.items.map((item, index) => {
-                        console.log(item);
                         return (
                           <div className={`flex flex-row justify-between ${item.done ? 'line-through' : ''} grid grid-flow-col grid-cols-4 gap-2`} key={index}>
                             <div className={`grid row-start-${index + 1} justify-center`}>

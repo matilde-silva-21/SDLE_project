@@ -3,11 +3,22 @@ import Popup from 'reactjs-popup'
 import '../styles/Modal.css'
 
 export default function ModalAdd({ lists, setLists }) {
-    const backendIP = "http://localhost:8082"
+    const numOfInstances = window.location.host.split(':')[1] - 5173
+    const port = parseInt(import.meta.env.VITE_BACKEND_PORT) + numOfInstances
+    const backendIP = `http://localhost:${port}`
     const [url, setUrl] = useState("")
 
     async function addList() {
-        const response = await fetch(`${backendIP}/lists/${url}/fetch`);
+        const response = await fetch(`${backendIP}/lists/${url}/fetch`, {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'include',
+          body: '',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          } 
+        })
 
         if (response.ok) {
             console.log("New shopping list added successfully")
