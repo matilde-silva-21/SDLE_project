@@ -23,7 +23,7 @@ func main() {
 	// Se quiser enviar uma mensagem, escrevo o messageStruct da mensagem que quero enviar no canal (messagesToSend <- messageStruct) 
 	messagesToSend := make(chan messageStruct.MessageStruct, 100)
 
-	go communicator.StartClientCommunication(listsToAdd, messagesToSend)
+	writeListsToDatabase := make(chan string, 100)
 
 	const filename = "local.db"
 	db, err := sql.Open("sqlite3", filename)
@@ -38,6 +38,8 @@ func main() {
 		fmt.Println(createError.Error())
 		return
 	}
+
+	go communicator.StartClientCommunication(listsToAdd, messagesToSend, writeListsToDatabase, sqliteRepository)
 
 	router := gin.Default()
 	api.SetDB(sqliteRepository)
@@ -55,7 +57,9 @@ func main() {
 		AllowHeaders: []string{"Content-Type, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin"},
 	}))
 
-	//router.Use(api.SetMessagesToSendChannel(messagesToSend))
+	router.Use(api.SetMessagesToSendChannel(messagesToSend))
+	router.Use(api.SetListsToAddChannel(listsToAdd))
+	router.Use(api.SetWriteListsToDatabaseChannel(writeListsToDatabase))
 	
 	router.POST("/login", api.Login)
 	router.GET("/lists", api.GetShoppingLists)

@@ -79,7 +79,7 @@ func main() {
 
 	fmt.Println("Hello from server")
 
-	ShopListExample()
+	//ShopListExample()
 	
 	filename := fmt.Sprintf("./dbs/server-%s.db", uuid.New())
 	db, err := sql.Open("sqlite3", filename)

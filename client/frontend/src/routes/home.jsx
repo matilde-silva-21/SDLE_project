@@ -141,7 +141,7 @@ export default function HomePage() {
   };
 
   const handlePull = async (list) => {
-    const res = await fetch(`http://localhost:8080/lists/${list.url}/fetch`, {
+    const res = await fetch(`http://localhost:8082/lists/${list.url}/fetch`, {
        method: 'POST',
        mode: 'cors',
        credentials: 'include',

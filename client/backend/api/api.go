@@ -350,8 +350,6 @@ func UploadList(c *gin.Context) {
 		return
 	}
 
-	log.Println(sl)
-
 	shoppingListModel, err := sl.Read(db)
 
 	if err != nil {
@@ -379,12 +377,21 @@ func UploadList(c *gin.Context) {
 
 	messagesToSend <- message
 
+	log.Printf("Sent write request to orchestrator for list %s.", message.ListURL)
+
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
 }
 
 func SetListsToAddChannel(ch chan string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("listsToAdd", ch)
+		c.Next()
+	}
+}
+
+func SetWriteListsToDatabaseChannel(ch chan string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("writeListsToDatabase", ch)
 		c.Next()
 	}
 }
@@ -402,7 +409,14 @@ func FetchList(c *gin.Context) {
 		return
 	}
 
-	log.Println(sl)
+	shoppingListModel, _ := sl.Read(db)
+
+	var username, cookieErr = getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error getting username from cookie"})
+		return
+	}
+
 
 	ch, ok := c.Get("listsToAdd")
     if !ok {
@@ -412,9 +426,36 @@ func FetchList(c *gin.Context) {
 
     listsToAdd := ch.(chan string)
 
-	listsToAdd <- sl.Url
 
-	// TODO: falta ler a lista e retorna la para o cliente
+	ch, ok = c.Get("messagesToSend")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
 
-	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
+    messagesToSend := ch.(chan messageStruct.MessageStruct)
+
+
+	ch, ok = c.Get("writeListsToDatabase")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    writeListsToDatabase := ch.(chan string)
+
+
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListModel.(*database.ShoppingListModel))
+	messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Read)
+	message, _ := messageStruct.JSONToMessage(messageJSON)
+	
+	listsToAdd <- message.ListURL
+	
+	messagesToSend <- message
+	
+	log.Printf("Sent read request to orchestrator for list %s.", message.ListURL)
+
+	writeListsToDatabase <- message.ListURL
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list fetched successfully"})
 }
