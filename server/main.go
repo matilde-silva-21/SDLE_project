@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 )
 
 func LexExample(){
@@ -77,6 +78,11 @@ func ShopListExample() {
 
 func main() {
 
+	if len(os.Args) < 3 {
+		fmt.Println("Not enough arguments.\nUsage: go run main.go <orchestrator_address> <backup_orchestrator_address>.")
+		return
+	}
+
 	fmt.Println("Hello from server")
 
 	//ShopListExample()
@@ -100,5 +106,5 @@ func main() {
 		fmt.Println(seedError.Error())
 	}
 
-	serverCommunicator.StartServerCommunication(sqliteRepository)
+	serverCommunicator.StartServerCommunication(os.Args[1], os.Args[2], sqliteRepository)
 }
