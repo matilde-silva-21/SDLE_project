@@ -72,6 +72,7 @@ func main() {
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
+	router.POST("/lists/:url/update", api.UpdateItemInShoppingList)
 	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend),func(c *gin.Context) {
 		newVal := GetNewConnectedValue(connected, connectedChannel)
 		api.UploadList(c, newVal)

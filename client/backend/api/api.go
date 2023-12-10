@@ -365,6 +365,56 @@ func SetMessagesToSendChannel(ch chan messageStruct.MessageStruct) gin.HandlerFu
     }
 }
 
+func UpdateItemInShoppingList(c *gin.Context) {
+    if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	var shoppingListt database.ShoppingListModel
+
+	if err := c.ShouldBindUri(&shoppingListt); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
+		return
+	}
+
+	shoppingListModel, err := shoppingListt.Read(db)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
+		return
+	}
+
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
+
+	var item database.Item
+	if err := c.ShouldBind(&item); err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error binding item"})
+		return
+	}
+
+	itemModel, err := item.Read(db)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "failed to read item"})
+	}
+
+	itemObj := itemModel.(*database.Item)
+	updatedItemObj := database.Item{Name: itemObj.Name, Quantity: item.Quantity, Done: itemObj.Done, List: itemObj.List}
+	itemObj.Update(db, &updatedItemObj)
+
+	username, _ := getUsernameFromCookie(c)
+	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
+	userListObj, _ := userList.Read(db)
+
+	if userListObj != nil {
+		updatedShoppingList := shoppingListCRDT.AlterItemQuantity(updatedItemObj.Name, int(updatedItemObj.Quantity))
+		c.IndentedJSON(http.StatusOK, updatedShoppingList)
+		return
+	}
+
+	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error..."})
+}
+
 func UploadList(c *gin.Context, connected bool) {
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
