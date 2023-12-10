@@ -17,13 +17,14 @@ export default function HomePage() {
   const [item, setItem] = useState("")
 
   const [quantity, setQuantity] = useState(0)
+  const [newItemQuantity, setNewItemQuantity] = useState(0);
 
   const addNewItem = async (list) => {
     const res = await fetch(`${backendIP}/lists/${list.url}/add`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
-      body: JSON.stringify({"name": item, "done": false, "quantity": parseInt(quantity, 10), "list": list}),
+      body: JSON.stringify({"name": item, "done": false, "quantity": parseInt(newItemQuantity, 10), "list": list}),
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -255,16 +256,16 @@ export default function HomePage() {
                       actualList.items.map((item, index) => {
                         console.log(item);
                         return (
-                          <div className={`flex flex-row justify-between ${item.done ? 'line-through' : ''} grid grid-flow-col grid-cols-4 gap-2`} key={index}>
+                          <div className={`flex flex-row justify-between ${item.done ? 'line-through' : ''} grid grid-flow-col grid-cols-4 gap-5`} key={index}>
                             <div className={`grid row-start-${index + 1} justify-center`}>
                               <input type="checkbox" checked={item.done} onChange={() => handleCheckboxChange(index)}/>
                             </div>
                             <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.name}</div>
                             <div className={`grid row-start-${index + 1}`}>
-                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md`} value={item} placeholder='name' onChange={(e) => updateItem(e.target.value)}>{item.quantity}</button>
+                            <input className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md text-center`} type='number' value={item.quantity} onChange={(e) => updateItem(item, parseInt(quantity, 10))}/>
                             </div>
                             <div className={`grid row-start-${index + 1}`}>
-                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
+                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-100'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
                             </div>
                           </div>
                         );
@@ -277,7 +278,7 @@ export default function HomePage() {
                     <div className='grid grid-cols-4 gap-20 mt-7'>
                       <div className='grid col-start-1 col-auto'></div>
                       <div className='grid col-start-2 justify-center col-span-1'><input className='rounded-md p-1 justify-center text-center bg-pink-300' type='text' id='itemName' value={item} placeholder='name' onChange={(e) => setItem(e.target.value)}></input></div>
-                      <div className='grid col-start-3 justify-center col-span-1'><input className='rounded-md bg-pink-300 p-1 text-center max-w-s' type='number' id='itemQuantity' value={quantity} onChange={(e) => setQuantity(e.target.value)} onBlur={() => updateItem(actualList.items[index], parseInt(quantity, 10))}></input></div>
+                      <div className='grid col-start-3 justify-center col-span-1'><input className='rounded-md bg-pink-300 p-1 text-center max-w-s' type='number' id='itemQuantity' value={newItemQuantity} onChange={(e) => setNewItemQuantity(e.target.value)}></input></div>
                       <div className='grid col-start-4 col-span-1'><button className=" bg-pink-300 p-1 rounded-md" onClick={() => addNewItem(actualList)}>Add Item</button></div>
                     </div>
                 }

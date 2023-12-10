@@ -235,74 +235,6 @@ func AddItemToShoppingList(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, item)
 }
 
-func UpdateItemInShoppingList(c *gin.Context) {
-    if !isLoggedIn(c) {
-		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
-		return
-	}
-
-	// username, cookieErr := getUsernameFromCookie(c)
-	// if cookieErr != nil {
-	// 	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error reading username from cookie"})
-	// 	return
-	// }
-
-	var shoppingListt database.ShoppingListModel
-
-	if err := c.ShouldBindUri(&shoppingListt); err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
-		return
-	}
-
-	shoppingListModel, err := shoppingListt.Read(db)
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
-		return
-	}
-
-	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
-	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
-	// messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Write)
-	// message, convErr := messageStruct.JSONToMessage(messageJSON)
-
-	// if convErr != nil {
-	// 	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error converting JSON to Message Struct"})
-	// }
-
-	// ch, ok := c.Get("messagesToSend")
-    // if !ok {
-    //     c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
-    //     return
-    // }
-
-    // messagesToSend := ch.(chan messageStruct.MessageStruct)
-
-	// messagesToSend <- message
-
-	// log.Printf("Sent write request to orchestrator for list %s.", message.ListURL)
-
-	// c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
-
-	var updateRequest struct {
-		ItemName       string `json:"itemName"`
-		UpdatedQuantity int    `json:"updatedQuantity"`
-	}
-
-	// var userList database.UserList
-	// userList.ListID = newShoppingList.Id
-	// userList.UserID = username
-	username, _ := getUsernameFromCookie(c)
-	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
-	userListObj, _ := userList.Read(db)
-
-	if userListObj == nil {
-		updatedShoppingList := shoppingListCRDT.AlterItemQuantity(updateRequest.ItemName, updateRequest.UpdatedQuantity)
-		c.IndentedJSON(http.StatusOK, updatedShoppingList)
-	}
-	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error..."})
-	return
-}
-
 func RemoveItemFromShoppingList(c *gin.Context) {
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
@@ -397,6 +329,51 @@ func SetMessagesToSendChannel(ch chan messageStruct.MessageStruct) gin.HandlerFu
         c.Set("messagesToSend", ch)
         c.Next()
     }
+}
+
+func UpdateItemInShoppingList(c *gin.Context) {
+    if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	// username, cookieErr := getUsernameFromCookie(c)
+	// if cookieErr != nil {
+	// 	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error reading username from cookie"})
+	// 	return
+	// }
+
+	var shoppingListt database.ShoppingListModel
+
+	if err := c.ShouldBindUri(&shoppingListt); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
+		return
+	}
+
+	shoppingListModel, err := shoppingListt.Read(db)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
+		return
+	}
+
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
+
+	var updateRequest struct {
+		ItemName       string `json:"itemName"`
+		UpdatedQuantity int    `json:"updatedQuantity"`
+	}
+
+	username, _ := getUsernameFromCookie(c)
+	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
+	userListObj, _ := userList.Read(db)
+
+	if userListObj == nil {
+		updatedShoppingList := shoppingListCRDT.AlterItemQuantity(updateRequest.ItemName, updateRequest.UpdatedQuantity)
+		c.IndentedJSON(http.StatusOK, updatedShoppingList)
+	}
+	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error..."})
+	return
 }
 
 func UploadList(c *gin.Context, connected bool) {
