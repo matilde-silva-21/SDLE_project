@@ -240,7 +240,7 @@ func PollQuorumChannels(channelsMap *([]ChanPair), listResponses *(map[int]([]by
 				return
 			}
 
-			log.Printf("Merge completed: %s", mergedCRDT)
+			log.Printf("Merge completed: %v", mergedCRDT)
 			
 	
 			log.Print("Sending new version to Quorum Participants.")
@@ -301,7 +301,7 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 	connections := [](*net.TCPConn){}
 
 	for _, ip := range IPs {
-		tcpAddr, err := net.ResolveTCPAddr("tcp", ip)
+		tcpAddr, _ := net.ResolveTCPAddr("tcp", ip)
 		conn, err := net.DialTCP("tcp", nil, tcpAddr)
 
 		if err != nil {
@@ -321,9 +321,6 @@ func StartQuorumConnection(IPs []string, payload messageStruct.MessageStruct, or
 
 		connections = append(connections, conn)
 		activeConn += 1
-
-
-
 
 		if (minNumConn <= activeConn) { break }
 

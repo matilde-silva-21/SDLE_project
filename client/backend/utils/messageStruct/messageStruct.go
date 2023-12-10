@@ -55,7 +55,7 @@ func JSONToMessage(body []byte) (MessageStruct,error){
 	return message, nil
 }
 
-func (message MessageStruct) BuildMessageForServer(IPaddresses []string) []byte{
+func (message MessageStruct) BuildMessageForServer(IPaddresses []string) []byte {
 
 	payload := message.ToJSON()
 

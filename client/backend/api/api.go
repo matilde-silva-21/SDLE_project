@@ -3,9 +3,12 @@ package api
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
+	//"sdle/m/v2/communication/communicator"
 	"sdle/m/v2/database"
 	"sdle/m/v2/utils/CRDT/shoppingList"
+	"sdle/m/v2/utils/messageStruct"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,10 +61,9 @@ func CreateShoppingList(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
 		return
 	}
-	fmt.Println(shoppingListModel)
 
 	shoppingListCRDT := shoppingList.Create(shoppingListModel.Name)
-	fmt.Println(shoppingListCRDT)
+
 	listCRDT := shoppingListCRDT.ListFormatForDatabase()
 	stateCRDT := shoppingListCRDT.StateFormatForDatabase()
 
@@ -69,7 +71,7 @@ func CreateShoppingList(c *gin.Context) {
 	shoppingListModel.State = stateCRDT
 
 	newShoppingListModel, createErr := shoppingListModel.Create(db)
-	fmt.Println(newShoppingListModel)
+
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
 		return
@@ -320,4 +322,151 @@ func SetDB(database *database.SQLiteRepository) {
 
 func GetDB() *database.SQLiteRepository {
 	return db
+}
+
+func SetMessagesToSendChannel(ch chan messageStruct.MessageStruct) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Set("messagesToSend", ch)
+        c.Next()
+    }
+}
+
+func UploadList(c *gin.Context, connected bool) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	
+	if !connected {
+		return
+	}
+
+
+	var username, cookieErr = getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error getting username from cookie"})
+		return
+	}
+
+	var sl database.ShoppingListModel
+
+	if err := c.ShouldBindUri(&sl); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list not found"})
+		return
+	}
+
+	shoppingListModel, err := sl.Read(db)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
+		return
+	}
+
+	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
+
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
+	messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Write)
+	message, convErr := messageStruct.JSONToMessage(messageJSON)
+
+	if convErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error converting JSON to Message Struct"})
+	}
+
+	ch, ok := c.Get("messagesToSend")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    messagesToSend := ch.(chan messageStruct.MessageStruct)
+
+	messagesToSend <- message
+
+	log.Printf("Sent write request to orchestrator for list %s.", message.ListURL)
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
+}
+
+func SetListsToAddChannel(ch chan string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("listsToAdd", ch)
+		c.Next()
+	}
+}
+
+func SetWriteListsToDatabaseChannel(ch chan string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("writeListsToDatabase", ch)
+		c.Next()
+	}
+}
+
+
+func FetchList(c *gin.Context, connected bool) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	if !connected {
+		return
+	}
+
+	var sl database.ShoppingListModel
+
+	if err := c.ShouldBindUri(&sl); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list not found"})
+		return
+	}
+
+	shoppingListModel, _ := sl.Read(db)
+
+	var username, cookieErr = getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error getting username from cookie"})
+		return
+	}
+
+
+	ch, ok := c.Get("listsToAdd")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    listsToAdd := ch.(chan string)
+
+
+	ch, ok = c.Get("messagesToSend")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    messagesToSend := ch.(chan messageStruct.MessageStruct)
+
+
+	ch, ok = c.Get("writeListsToDatabase")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    writeListsToDatabase := ch.(chan string)
+
+
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListModel.(*database.ShoppingListModel))
+	messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Read)
+	message, _ := messageStruct.JSONToMessage(messageJSON)
+	
+	listsToAdd <- message.ListURL
+	
+	messagesToSend <- message
+	
+	log.Printf("Sent read request to orchestrator for list %s.", message.ListURL)
+
+	writeListsToDatabase <- message.ListURL
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list fetched successfully"})
 }

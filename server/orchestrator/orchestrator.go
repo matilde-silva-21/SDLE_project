@@ -195,7 +195,10 @@ func main() {
 	
 	listener, err := createTCPListener()
 
-	if(err != nil){ return }
+	if(err != nil){ 
+		log.Printf("An error occured while establishing TCP listener: ", err)
+		return
+	}
 
 	
 	// Loop through, waiting for connections from the server

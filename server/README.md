@@ -7,8 +7,8 @@ Then, start the orchestrator (first example), as well as its backup (second exam
 
 ```go run orchestrator.go localhost:8080 localhost:8081``` and ```go run orchestrator.go localhost:8081 localhost:8080```
 
-Lastly, start as many servers as your heart desires, but don't forget to tell it both of the orchestrator addresses! You can do it by executing, in different terminals, in the `server` directory the command:
-```go run main.go localhost:8080 localhost:8081```
+Lastly, start as many servers as your heart desires, but don't forget to tell it both of the orchestrator addresses! You can do it by executing, in different terminals, in the `server` directory the command. You also need to specify the database name to be used by the server in the last argument. The command would be:
+```go run main.go localhost:8080 localhost:8081 <DB_NAME>```
 
 Then, to simulate a client-side message sender, you can run, in the `server/mock/client` directory, the following command:
 ```go run mockClient.go```

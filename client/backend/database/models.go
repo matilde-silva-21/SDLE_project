@@ -1,10 +1,5 @@
 package database
 
-import (
-	"fmt"
-	"database/sql"
-)
-
 type Model interface {
 	CreateTable(r *SQLiteRepository) error
 	Create(r *SQLiteRepository) (Model, error)
@@ -42,7 +37,6 @@ type UserList struct {
 // ITEM MODELS METHODS
 
 func (item *Item) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS Item")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS Item (Id INTEGER PRIMARY KEY, Name TEXT, Done INTEGER, Quantity INTEGER, List TEXT REFERENCES ShoppingList)")
 
 	if err != nil {
@@ -133,7 +127,6 @@ func (item *Item) ReadAll(r *SQLiteRepository) ([]Model, error) {
 // USER MODEL METHODS
 
 func (user *User) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS User")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS User (Username TEXT PRIMARY KEY)")
 
 	if err != nil {
@@ -200,7 +193,6 @@ func (user *User) ReadAll(r *SQLiteRepository) ([]Model, error) {
 }
 
 func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingListModel, error) {
-	fmt.Println(user.Username)
 	rows, err := r.db.Query("SELECT ShoppingList.Id, ShoppingList.Name, ShoppingList.Url FROM ShoppingList JOIN UserList ON UserList.ListId = ShoppingList.Id WHERE UserList.UserId = ?", user.Username)
 
 	if err != nil {
@@ -227,7 +219,6 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingListModel, error
 // SHOPPING LIST MODEL METHODS
 
 func (list *ShoppingListModel) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List TEXT, State TEXT)")
 
 	if err != nil {
@@ -336,11 +327,6 @@ func GetIDByURL(r *SQLiteRepository, url string) (int64, error) {
 	err := r.db.QueryRow("SELECT Id FROM ShoppingList WHERE Url = ?", url).Scan(&id)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// Return a custom error indicating that no matching URL was found
-			return 0, fmt.Errorf("ShoppingList with URL '%s' not found", url)
-		}
-		// Return other errors as is
 		return 0, err
 	}
 
@@ -350,7 +336,6 @@ func GetIDByURL(r *SQLiteRepository, url string) (int64, error) {
 // USER LIST MODEL METHODS
 
 func (userList *UserList) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS UserList")
 	_, err := r.db.Exec(`
 	CREATE TABLE IF NOT EXISTS UserList (
 		ListId INTEGER REFERENCES ShoppingList ON DELETE CASCADE ON UPDATE CASCADE,
@@ -365,7 +350,6 @@ func (userList *UserList) CreateTable(r *SQLiteRepository) error {
 }
 
 func (userList *UserList) Create(r *SQLiteRepository) (Model, error) {
-	fmt.Println(userList)
 	_, err := r.db.Exec("INSERT INTO UserList(ListId, UserId) VALUES (?, ?)", &userList.ListID, &userList.UserID)
 
 	if err != nil {

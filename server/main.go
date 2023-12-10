@@ -1,16 +1,17 @@
 package main
 
 import (
-	"sdle/server/database"
 	"database/sql"
 	"fmt"
 	"log"
-	"sdle/server/utils/messageStruct"
+	"os"
+	"sdle/server/database"
+	"sdle/server/serverCommunicator"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
-	"sdle/server/serverCommunicator"
+	"sdle/server/utils/messageStruct"
+
 	_ "github.com/mattn/go-sqlite3"
-	"os"
 )
 
 func LexExample(){
@@ -76,16 +77,16 @@ func ShopListExample() {
 
 func main() {
 
-	if len(os.Args) < 3 {
+	if len(os.Args) < 4 {
 		fmt.Println("Not enough arguments.\nUsage: go run main.go <orchestrator_address> <backup_orchestrator_address>.")
 		return
 	}
 
 	fmt.Println("Hello from server")
 
-	ShopListExample()
+	db_name := os.Args[3]
 	
-	const filename = "server.db"
+	filename := fmt.Sprintf("./dbs/server-%s.db", db_name)
 	db, err := sql.Open("sqlite3", filename)
 
 	if err != nil {
@@ -97,11 +98,6 @@ func main() {
 	if createError != nil {
 		fmt.Println(createError.Error())
 		return
-	}
-	
-	seedError := sqliteRepository.Seed()
-	if seedError != nil {
-		fmt.Println(seedError.Error())
 	}
 
 	serverCommunicator.StartServerCommunication(os.Args[1], os.Args[2], sqliteRepository)

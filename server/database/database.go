@@ -25,7 +25,7 @@ func (r *SQLiteRepository) CreateTables() error {
 
 	for i, v := range models {
 		err := v.CreateTable(r)
-		fmt.Printf("created model %d %v\n", i, v)
+		fmt.Printf("created model if needed %d %v\n", i, v)
 
 		if err != nil {
 			return err
