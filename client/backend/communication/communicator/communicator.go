@@ -104,13 +104,23 @@ func WriteListsToDatabase(updatedMap *map[string](shoppingList.ShoppingList), wr
 					continue
 				}
 
-				err := localList.Update(repo, localList)
-				if(err != nil){
-					log.Print("Error writing to memory.")
-					return err
+				if (id != 0){
+					err := localList.Update(repo, localList)
+					if(err != nil){
+						log.Print("Error writing to memory.")
+						return err
+					}
+					log.Printf("Updated memory value for list %s.", urlToWrite)
+					return nil
+				} else {
+					_, err := localList.Create(repo)
+					if(err != nil){
+						log.Print("Error writing to memory.")
+						return err
+					}
+					log.Printf("Wrote new list to memory %s.", urlToWrite)
+					return nil
 				}
-				log.Printf("Updated memory value for list %s.", urlToWrite)
-				return nil
 		}
 	}
 	
