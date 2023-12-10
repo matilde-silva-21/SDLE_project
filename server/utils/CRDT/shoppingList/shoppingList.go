@@ -190,6 +190,17 @@ func (list ShoppingList) CheckItemQuantity(item string) int {
 	return entry.Second
 }
 
+
+// Wipes all history of the list and state but not the object itself, it keeps its name and URL.
+func (list *ShoppingList) ResetShoppingList() {
+	
+	newList := LexCounter.Create[string, int]("list")
+	newState := LexCounter.Create[string, int]("state")
+
+	list.list = newList
+	list.state = newState 
+}
+
 /*
 {
 	{
@@ -413,7 +424,7 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 	err := json.Unmarshal([]byte(mess.Body), &dummyVar)
 
 	if(err != nil){
-		fmt.Println("Error 2:", err)
+		fmt.Println("Error:", err)
 		return fake
 	}
 
