@@ -11,8 +11,6 @@ export default function ModalAdd({ lists, setLists }) {
 
         if (response.ok) {
             console.log("New shopping list added successfully")
-            let res = await response.json()
-            setLists([...lists, res])
         }
     }
     

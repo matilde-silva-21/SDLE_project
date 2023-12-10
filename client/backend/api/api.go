@@ -337,12 +337,6 @@ func UpdateItemInShoppingList(c *gin.Context) {
 		return
 	}
 
-	// username, cookieErr := getUsernameFromCookie(c)
-	// if cookieErr != nil {
-	// 	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error reading username from cookie"})
-	// 	return
-	// }
-
 	var shoppingListt database.ShoppingListModel
 
 	if err := c.ShouldBindUri(&shoppingListt); err != nil {
@@ -359,22 +353,32 @@ func UpdateItemInShoppingList(c *gin.Context) {
 	shoppingListObj := shoppingListModel.(*database.ShoppingListModel)
 	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListObj)
 
-	var updateRequest struct {
-		ItemName       string `json:"itemName"`
-		UpdatedQuantity int    `json:"updatedQuantity"`
+	var item database.Item
+	if err := c.ShouldBind(&item); err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error binding item"})
+		return
 	}
+
+	itemModel, err := item.Read(db)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "failed to read item"})
+	}
+
+	itemObj := itemModel.(*database.Item)
+	updatedItemObj := database.Item{Name: itemObj.Name, Quantity: item.Quantity, Done: itemObj.Done, List: itemObj.List}
+	itemObj.Update(db, &updatedItemObj)
 
 	username, _ := getUsernameFromCookie(c)
 	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
 	userListObj, _ := userList.Read(db)
 
 	if userListObj != nil {
-		updatedShoppingList := shoppingListCRDT.AlterItemQuantity(updateRequest.ItemName, updateRequest.UpdatedQuantity)
+		updatedShoppingList := shoppingListCRDT.AlterItemQuantity(updatedItemObj.Name, int(updatedItemObj.Quantity))
 		c.IndentedJSON(http.StatusOK, updatedShoppingList)
 		return
 	}
+
 	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error..."})
-	return
 }
 
 func UploadList(c *gin.Context, connected bool) {

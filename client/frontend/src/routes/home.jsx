@@ -174,7 +174,7 @@ export default function HomePage() {
       credentials: 'include',
       body: JSON.stringify({
         "name": item.name,
-        "updatedQuantity": updatedQuantity,
+        "quantity": parseInt(updatedQuantity, 10),
       }),
       headers: {
         'Accept': 'application/json',
