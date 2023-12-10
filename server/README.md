@@ -10,7 +10,7 @@ Then, start the orchestrator (first example), as well as its backup (second exam
 Lastly, start as many servers as your heart desires, but don't forget to tell it both of the orchestrator addresses! You can do it by executing, in different terminals, in the `server` directory the command. You also need to specify the database name to be used by the server in the last argument. The command would be:
 ```go run main.go localhost:8080 localhost:8081 <DB_NAME>```
 
-Then, to simulate a client-side message sender, you can run, in the `server/mock/client` directory, the following command:
-```go run mockClient.go```
+Then, to simulate a client-side message sender, you can run, in the `server/mock/client` directory, the following command. Specify the url you wish to emulate:
+```go run mockClient.go <list_url>```
 
 Important to note, the minimum number of quorum participants is determined by the number of active servers (`NumberOfServers/2 + 1`), so there needs to be at least **two** servers running in order for a quorum to happen.
