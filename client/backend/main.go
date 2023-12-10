@@ -14,9 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
 func main() {
-
 	// Se quiser ouvir uma lista, escrevo o URl da lista que quero ouvir no canal (listsToAdd <- url) 
 	listsToAdd := make(chan string, 100)
 	
@@ -68,8 +66,18 @@ func main() {
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
-	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend), api.UploadList)
-	router.POST("lists/:url/fetch", api.SetListsToAddChannel(listsToAdd), api.FetchList)
+	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend),func(c *gin.Context) {
+		connected := GetConnectedStatus()
+		api.UploadList(c, connected)
+	})
+	router.POST("lists/:url/fetch", api.SetListsToAddChannel(listsToAdd), func(c *gin.Context) {
+		connected := GetConnectedStatus()
+		api.FetchList(c, connected)
+	})
 
 	router.Run("localhost:8082")
+}
+
+func GetConnectedStatus() bool{
+	return true
 }
