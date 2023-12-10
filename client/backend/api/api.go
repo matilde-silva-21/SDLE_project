@@ -227,8 +227,9 @@ func AddItemToShoppingList(c *gin.Context) {
 	
 	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListModel.(*database.ShoppingListModel))
 	shoppingListCRDT.AddItem(item.Name, int(item.Quantity))
+	newDB := shoppingListCRDT.ToDatabaseShoppingList(sl.Id)
 
-	err = shoppingListModel.Update(db, shoppingListModel)
+	err = shoppingListModel.Update(db, newDB)
 	if(err != nil){
 		log.Print("Error writing to memory.")
 		return
@@ -271,8 +272,9 @@ func RemoveItemFromShoppingList(c *gin.Context) {
 
 	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(sl.(*database.ShoppingListModel))
 	shoppingListCRDT.DeleteItem(item.Name)
+	newDB := shoppingListCRDT.ToDatabaseShoppingList(sl.(*database.ShoppingListModel).Id)
 
-	err := sl.Update(db, sl)
+	err := sl.Update(db, newDB)
 	if(err != nil){
 		log.Print("Error deleting from memory.")
 		return
