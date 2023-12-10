@@ -37,7 +37,6 @@ type UserList struct {
 // ITEM MODELS METHODS
 
 func (item *Item) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS Item")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS Item (Id INTEGER PRIMARY KEY, Name TEXT, Done INTEGER, Quantity INTEGER, List TEXT REFERENCES ShoppingList)")
 
 	if err != nil {
@@ -127,7 +126,6 @@ func (item *Item) ReadAll(r *SQLiteRepository) ([]Model, error) {
 // USER MODEL METHODS
 
 func (user *User) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS User")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS User (Username TEXT PRIMARY KEY)")
 
 	if err != nil {
@@ -220,7 +218,6 @@ func (user *User) ReadUserLists(r *SQLiteRepository) ([]ShoppingList, error) {
 // SHOPPING LIST MODEL METHODS
 
 func (list *ShoppingList) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS ShoppingList")
 	_, err := r.db.Exec("CREATE TABLE IF NOT EXISTS ShoppingList (Id INTEGER PRIMARY KEY, Name TEXT, Url TEXT UNIQUE, List String, State String)")
 
 	if err != nil {
@@ -339,7 +336,6 @@ func GetIDByURL(r *SQLiteRepository, url string) (int64, error) {
 // USER LIST MODEL METHODS
 
 func (userList *UserList) CreateTable(r *SQLiteRepository) error {
-	r.db.Exec("DROP TABLE IF EXISTS UserList")
 	_, err := r.db.Exec(`
 	CREATE TABLE IF NOT EXISTS UserList (
 		ListId INTEGER REFERENCES ShoppingList ON DELETE CASCADE ON UPDATE CASCADE,

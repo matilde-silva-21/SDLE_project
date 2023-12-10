@@ -34,7 +34,7 @@ func main() {
 	serverMsg := messageStruct.CreateMessage("123", "john.doe", "Write",
 		`{"Name":"My List 1", "List":{"Map":{"apple":{"First":1,"Second":3},"pear":{"First":2,"Second":2},"rice":{"First":3,"Second":2}}}, "State":{"Map":{"pear":{"First":0,"Second":0},"rice":{"First":2,"Second":0}}}}`)
 	// Join the received list with the local list
-	err = communicator.ReadAndMergeCRDT(serverMsg, sqliteRepository)
+	_, err = communicator.ReadAndMergeCRDT(serverMsg, sqliteRepository)
 	if(err != nil){
 		log.Print("Error joining the lists.")
 	} else{
