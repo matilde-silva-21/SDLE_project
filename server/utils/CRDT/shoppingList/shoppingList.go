@@ -11,7 +11,7 @@ import (
 )
 
 type ShoppingList struct {
-	url   string
+	Url   string
 	name  string
 	list  LexCounter.LexCounter[string, int]
 	state LexCounter.LexCounter[string, int] // If item state == 0, not bought. If item state >= 1, bought
@@ -25,20 +25,20 @@ func Create(listName string) ShoppingList {
 
 	u := uuid.New()
 
-	return ShoppingList{url: u.String(), name: listName, list: list, state: state}
+	return ShoppingList{Url: u.String(), name: listName, list: list, state: state}
 }
 
 
-func createFromArguments(listName string, url string, list, state LexCounter.LexCounter[string, int]) ShoppingList {
+func createFromArguments(listName string, Url string, list, state LexCounter.LexCounter[string, int]) ShoppingList {
 
 	(&list).SetID("list")
 	(&state).SetID("state")
 
-	return ShoppingList{url: url, name: listName, list: list, state: state}
+	return ShoppingList{Url: Url, name: listName, list: list, state: state}
 }
 
 
-func CreateFromStrings(listName, url, list, state string) ShoppingList {
+func CreateFromStrings(listName, Url, list, state string) ShoppingList {
 
 	listObject := LexCounter.Create[string, int]("list")
 	stateObject := LexCounter.Create[string, int]("state")
@@ -59,12 +59,12 @@ func CreateFromStrings(listName, url, list, state string) ShoppingList {
 		return fake
 	}
 
-	return ShoppingList{url: url, name: listName, list: listObject, state: stateObject}
+	return ShoppingList{Url: Url, name: listName, list: listObject, state: stateObject}
 }
 
 
 func (list ShoppingList) GetURL() string {
-	return list.url
+	return list.Url
 }
 
 func (list ShoppingList) GetListName() string {
@@ -377,7 +377,7 @@ func (list ShoppingList) ConvertToMessageFormat(username string, action messageS
 	
 	body := fmt.Sprintf(`{"Name":"%s", "List":%s, "State":%s}`, list.name, jsonList, jsonState)
 
-	return messageStruct.CreateMessage(list.url, username, action, body).ToJSON()
+	return messageStruct.CreateMessage(list.Url, username, action, body).ToJSON()
 
 }
 
@@ -443,7 +443,7 @@ func (list ShoppingList) ToDatabaseShoppingList(id int64) *database.ShoppingList
 	return &database.ShoppingList{
 		Id:    id,
 		Name:  list.name,
-		Url:   list.url,
+		Url:   list.Url,
 		List:  list.ListFormatForDatabase(),
 		State: list.StateFormatForDatabase(),
 	}

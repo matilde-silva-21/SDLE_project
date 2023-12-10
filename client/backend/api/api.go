@@ -204,13 +204,13 @@ func AddItemToShoppingList(c *gin.Context) {
 		return
 	}
 
-	var shoppingList database.ShoppingListModel
-	if err := c.ShouldBindUri(&shoppingList); err != nil {
+	var sl database.ShoppingListModel
+	if err := c.ShouldBindUri(&sl); err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list url not found"})
 		return
 	}
 
-	shoppingListModel, err := shoppingList.Read(db)
+	shoppingListModel, err := sl.Read(db)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading shopping list"})
 		return
@@ -222,6 +222,15 @@ func AddItemToShoppingList(c *gin.Context) {
 	bindingErr := c.ShouldBind(&item)
 	if bindingErr != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to item"})
+		return
+	}
+	
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(shoppingListModel.(*database.ShoppingListModel))
+	shoppingListCRDT.AddItem(item.Name, int(item.Quantity))
+
+	err = shoppingListModel.Update(db, shoppingListModel)
+	if(err != nil){
+		log.Print("Error writing to memory.")
 		return
 	}
 
@@ -250,6 +259,22 @@ func RemoveItemFromShoppingList(c *gin.Context) {
 	itemModel, readErr := item.Read(db)
 	if readErr != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error reading item from db"})
+		return
+	}
+
+	var sl database.Model
+
+	if err := c.ShouldBindUri(&sl); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list not found"})
+		return
+	}
+
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(sl.(*database.ShoppingListModel))
+	shoppingListCRDT.DeleteItem(item.Name)
+
+	err := sl.Update(db, sl)
+	if(err != nil){
+		log.Print("Error deleting from memory.")
 		return
 	}
 

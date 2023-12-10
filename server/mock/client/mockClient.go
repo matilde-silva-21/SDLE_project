@@ -7,6 +7,7 @@ import (
 	"log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
+	"fmt"
 )
 
 func failOnError(err error, msg string) {
@@ -125,7 +126,10 @@ func main(){
 
 	go rabbitmq.PrintIncomingMessages(messages)
 
-	body := ShopListExample().ConvertToMessageFormat("john.doe", messageStruct.Delete)
+	crdt := ShopListExample()
+	crdt.Url = "c80e0d62-b924-46b5-98e8-7a141b8b1e15"
+	fmt.Println(crdt)
+	body := crdt.ConvertToMessageFormat("john.doe", messageStruct.Write)
 	
 	for {
 

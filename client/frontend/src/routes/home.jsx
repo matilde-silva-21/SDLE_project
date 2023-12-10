@@ -152,7 +152,7 @@ export default function HomePage() {
       } 
      })
 
-     const updatedList = await res.json()
+     //const updatedList = await res.json()
 
 	  //setActualList(updatedList);
 	  window.location.reload();
