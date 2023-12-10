@@ -238,7 +238,7 @@ export default function HomePage() {
                             </div>
                             <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.name}</div>
                             <div className={`grid row-start-${index + 1}`}>
-                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md`} onClick={() => updateItem(item)}>{item.quantity}</button>
+                              <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md`} value={item} placeholder='name' onChange={(e) => setItem(e.target.value)}>{item.quantity}</button>
                             </div>
                             <div className={`grid row-start-${index + 1}`}>
                               <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
