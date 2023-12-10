@@ -262,7 +262,17 @@ export default function HomePage() {
                             </div>
                             <div className={`${item.done ? 'text-gray-700' : ''} grid row-start-${index + 1} justify-center`}>{item.name}</div>
                             <div className={`grid row-start-${index + 1}`}>
-                            <input className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md text-center`} type='number' value={item.quantity} onChange={(e) => updateItem(item, parseInt(quantity, 10))}/>
+                            <input
+                              className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-200'} justify-center p-1 rounded-md text-center`}
+                              type='number'
+                              value={quantity !== 0 ? quantity : item.quantity}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateItem(item, quantity);
+                                }
+                              }}
+                              onChange={(e) => setQuantity(e.target.value)}
+                            />
                             </div>
                             <div className={`grid row-start-${index + 1}`}>
                               <button className={`${item.done ? 'bg-pink-100 text-gray-700' : 'bg-pink-100'} p-1 rounded-md`} onClick={() => deleteItem(item)}>Delete</button>
