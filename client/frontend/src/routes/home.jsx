@@ -97,9 +97,9 @@ export default function HomePage() {
     getLists()
   }, [])
 
-  useEffect(() => {
-    setActualList(listOfLists[listOfLists.length-1])
-  }, [listOfLists])
+  // useEffect(() => {
+  //   setActualList(listOfLists[listOfLists.length-1])
+  // }, [listOfLists])
 
   const getLists = async () => {
     
