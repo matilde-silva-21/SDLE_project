@@ -154,7 +154,8 @@ export default function HomePage() {
 
      const updatedList = await res.json()
 
-    setActualList(updatedList);
+	  //setActualList(updatedList);
+	  window.location.reload();
   };
 
   const handleCopyUrl = (list) => {
