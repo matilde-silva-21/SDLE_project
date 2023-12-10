@@ -368,9 +368,10 @@ func UpdateItemInShoppingList(c *gin.Context) {
 	userList := database.UserList{ListID: shoppingListObj.Id, UserID: username}
 	userListObj, _ := userList.Read(db)
 
-	if userListObj == nil {
+	if userListObj != nil {
 		updatedShoppingList := shoppingListCRDT.AlterItemQuantity(updateRequest.ItemName, updateRequest.UpdatedQuantity)
 		c.IndentedJSON(http.StatusOK, updatedShoppingList)
+		return
 	}
 	c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error..."})
 	return
