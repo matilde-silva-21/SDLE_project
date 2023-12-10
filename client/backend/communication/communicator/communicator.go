@@ -121,11 +121,21 @@ func WriteListsToDatabase(updatedMap *map[string](shoppingList.ShoppingList), wr
 	messagesToSend := make(chan messageStruct.MessageStruct, 100) // Se quiser enviar uma mensagem, escrevo o messageStruct da mensagem que quero enviar no canal (messagesToSend <- messageStruct) 
 */
 
-func StartClientCommunication(listsToAdd chan string, messagesToSend chan messageStruct.MessageStruct, writeListsToDatabase chan string, repo *database.SQLiteRepository) {
+func StartClientCommunication(connected chan bool, listsToAdd chan string, messagesToSend chan messageStruct.MessageStruct, writeListsToDatabase chan string, repo *database.SQLiteRepository) error {
 
 	// <------------ RabbitMQ Boiler plate ------------>
-	conn, ch := rabbbitmq.CreateChannel()
+	
+	conn, ch, err := rabbbitmq.CreateChannel()
+	if(err != nil) {
+		connected <- false
+	}
 
+	for (err != nil){
+		conn, ch, err = rabbbitmq.CreateChannel()
+	}
+
+	connected <- true
+	
 	defer conn.Close()
 	defer ch.Close()
 	
@@ -157,5 +167,7 @@ func StartClientCommunication(listsToAdd chan string, messagesToSend chan messag
 			updatedMap[messageObject.ListURL] = update
 		}
 	}
+
+	return nil
 
 }

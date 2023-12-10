@@ -23,6 +23,8 @@ func main() {
 
 	writeListsToDatabase := make(chan string, 100)
 
+	connectedChannel := make(chan bool, 2)
+
 	const filename = "local.db"
 	db, err := sql.Open("sqlite3", filename)
 
@@ -37,7 +39,11 @@ func main() {
 		return
 	}
 
-	go communicator.StartClientCommunication(listsToAdd, messagesToSend, writeListsToDatabase, sqliteRepository)
+	go communicator.StartClientCommunication(connectedChannel, listsToAdd, messagesToSend, writeListsToDatabase, sqliteRepository)
+
+	connected := <- connectedChannel
+
+	log.Printf("RabbitMQ connection: %b\n", connected)
 
 	router := gin.Default()
 	api.SetDB(sqliteRepository)
@@ -67,17 +73,24 @@ func main() {
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
 	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend),func(c *gin.Context) {
-		connected := GetConnectedStatus()
-		api.UploadList(c, connected)
+		newVal := GetNewConnectedValue(connected, connectedChannel)
+		api.UploadList(c, newVal)
 	})
 	router.POST("lists/:url/fetch", api.SetListsToAddChannel(listsToAdd), func(c *gin.Context) {
-		connected := GetConnectedStatus()
-		api.FetchList(c, connected)
+		newVal := GetNewConnectedValue(connected, connectedChannel)
+		api.FetchList(c, newVal)
 	})
 
 	router.Run("localhost:8082")
 }
 
-func GetConnectedStatus() bool{
-	return true
+func GetNewConnectedValue(connected bool, connectedChannel chan bool) bool{
+
+	select {
+		case newValue := <- connectedChannel:
+			return newValue
+		default:
+			return connected
+	}
+	
 }

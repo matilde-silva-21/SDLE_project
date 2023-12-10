@@ -2,7 +2,6 @@ package rabbbitmq
 
 import (
 	"log"
-	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -12,22 +11,24 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func CreateChannel() (*amqp.Connection, *amqp.Channel){
+func CreateChannel() (*amqp.Connection, *amqp.Channel, error){
 	// Connect to RabbitMQ server
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
+		return nil, nil, err
 	}
 	//failOnError(err, "Failed to connect to RabbitMQ")
 
 	// Create a channel
 	ch, err := conn.Channel()
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
+		return nil, nil, err
 	}
 	//failOnError(err, "Failed to open a channel")
 
-	return conn, ch
+	return conn, ch, nil
 }
 
 func DeclareExchange(ch *amqp.Channel, exchangeName string) {
@@ -122,7 +123,7 @@ func HandleIncomingMessages(messages <-chan amqp.Delivery) {
 func RabbitMQExample() {
 
 	// <------------ Boiler plate ------------>
-	conn, ch := CreateChannel()
+	conn, ch, _ := CreateChannel()
 	
 	defer conn.Close()
 	defer ch.Close()
