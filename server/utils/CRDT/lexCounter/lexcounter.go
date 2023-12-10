@@ -66,7 +66,7 @@ func Lexjoin[V Number](r, l Pair[V]) Pair[V] {
 	} else if r1 > l1 {
 		return r
 	} else if r1 == l1 {
-		res := Pair[V]{First: r1 + 1, Second: r2 + l2}
+		res := Pair[V]{First: r1, Second: r2 + l2}
 		return res
 	}
 
