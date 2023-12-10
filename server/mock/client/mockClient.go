@@ -8,6 +8,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
 	"fmt"
+	"os"
 )
 
 func failOnError(err error, msg string) {
@@ -105,6 +106,13 @@ func rabbit() {
 
 func main(){
 
+	url := ""
+	if len(os.Args) > 1 {
+		url = os.Args[1]
+	} else {
+		fmt.Println("Usage: go run mockClient.go <list_url>")
+		return
+	}
 	// <------------ Boiler plate ------------>
 	conn, ch := rabbitmq.CreateChannel()
 	
@@ -127,7 +135,7 @@ func main(){
 	go rabbitmq.PrintIncomingMessages(messages)
 
 	crdt := ShopListExample()
-	crdt.Url = "2990f9e7-cbbc-4852-9906-471436639829"
+	crdt.Url = url
 	fmt.Println(crdt)
 	body := crdt.ConvertToMessageFormat("john.doe", messageStruct.Write)
 	
