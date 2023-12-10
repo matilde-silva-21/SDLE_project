@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"database/sql"
 )
 
 type Model interface {
@@ -257,6 +258,19 @@ func (list *ShoppingListModel) Delete(r *SQLiteRepository) error {
 }
 
 func (list *ShoppingListModel) Update(r *SQLiteRepository, updated Model) error {
+	updatedList := updated.(*ShoppingListModel)
+	res, err := r.db.Exec("UPDATE ShoppingList SET list = (?), state = (?) WHERE id = (?)", updatedList.List, updatedList.State, list.Id)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil || rows == 0 {
+		return err
+	}
+
 	return nil
 }
 

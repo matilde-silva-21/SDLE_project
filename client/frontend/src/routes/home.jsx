@@ -147,7 +147,7 @@ export default function HomePage() {
   };
 
   const handleCopyUrl = (list) => {
-    const listUrl = `http://localhost:3000/lists/${list.url}`;
+    const listUrl = `${list.url}`;
     navigator.clipboard.writeText(listUrl)
       .then(() => alert('URL copied to clipboard'))
       .catch((err) => console.error('Failed to copy URL', err));

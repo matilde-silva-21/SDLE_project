@@ -64,7 +64,9 @@ func ShopListExample() {
 
 	messageFormat := shopList1.ConvertToMessageFormat("john.doe", messageStruct.Write)
 
+
 	fmt.Println("\n", string(messageFormat))
+
 
 	fmt.Println("\n", shoppingList.MessageByteToCRDT(messageFormat))
 	shoplistCopy := shoppingList.CreateFromStrings(shopList1.GetURL(), shopList1.GetListName(), shopList1.ListFormatForDatabase(), shopList1.StateFormatForDatabase())
@@ -81,7 +83,7 @@ func main() {
 
 	fmt.Println("Hello from server")
 
-	//ShopListExample()
+	ShopListExample()
 	
 	const filename = "server.db"
 	db, err := sql.Open("sqlite3", filename)
