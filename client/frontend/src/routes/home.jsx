@@ -167,6 +167,7 @@ export default function HomePage() {
   };
 
   const updateItem = async (item, updatedQuantity) => {
+    console.log(updatedQuantity)
     const res = await fetch(`${backendIP}/lists/${actualList.url}/update`, {
       method: 'POST',
       mode: 'cors',
@@ -182,7 +183,7 @@ export default function HomePage() {
     });
   
     const updatedItem = await res.json();
-    
+    console.log(updatedItem)
     setActualList({
       ...actualList,
       items: actualList.items.map((i) => (i.name === updatedItem.name ? updatedItem : i)),
@@ -269,6 +270,7 @@ export default function HomePage() {
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   updateItem(item, quantity);
+                                  console.log(item.quantity)
                                 }
                               }}
                               onChange={(e) => setQuantity(e.target.value)}
