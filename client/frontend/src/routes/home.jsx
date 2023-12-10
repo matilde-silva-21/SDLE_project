@@ -141,14 +141,20 @@ export default function HomePage() {
   };
 
   const handlePull = async (list) => {
-    // Missing updating list in the client side
-    // const updatedList = await fetch(`http://localhost:8080/lists/${list.url}`, {
-    //   method: 'GET',
-    //   mode: 'cors',
-    //   credentials: 'include',
-    // }).then(response => response.json());
+    const res = await fetch(`http://localhost:8080/lists/${list.url}/fetch`, {
+       method: 'POST',
+       mode: 'cors',
+       credentials: 'include',
+       body: '',
+       headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      } 
+     })
 
-    // setActualList(updatedList);
+     const updatedList = await res.json()
+
+    setActualList(updatedList);
   };
 
   const handleCopyUrl = (list) => {

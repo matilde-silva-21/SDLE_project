@@ -61,10 +61,9 @@ func CreateShoppingList(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "error binding post request body to shopping list"})
 		return
 	}
-	fmt.Println(shoppingListModel)
 
 	shoppingListCRDT := shoppingList.Create(shoppingListModel.Name)
-	fmt.Println(shoppingListCRDT)
+
 	listCRDT := shoppingListCRDT.ListFormatForDatabase()
 	stateCRDT := shoppingListCRDT.StateFormatForDatabase()
 
@@ -72,7 +71,7 @@ func CreateShoppingList(c *gin.Context) {
 	shoppingListModel.State = stateCRDT
 
 	newShoppingListModel, createErr := shoppingListModel.Create(db)
-	fmt.Println(newShoppingListModel)
+
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error creating shopping list"})
 		return
@@ -379,6 +378,43 @@ func UploadList(c *gin.Context) {
     messagesToSend := ch.(chan messageStruct.MessageStruct)
 
 	messagesToSend <- message
+
+	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
+}
+
+func SetListsToAddChannel(ch chan string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("listsToAdd", ch)
+		c.Next()
+	}
+}
+
+func FetchList(c *gin.Context) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	var sl database.ShoppingListModel
+
+	if err := c.ShouldBindUri(&sl); err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"msg": "list not found"})
+		return
+	}
+
+	log.Println(sl)
+
+	ch, ok := c.Get("listsToAdd")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    listsToAdd := ch.(chan string)
+
+	listsToAdd <- sl.Url
+
+	// TODO: falta ler a lista e retorna la para o cliente
 
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list uploaded successfully"})
 }

@@ -1,14 +1,16 @@
 package main
 
 import (
-	"sdle/server/database"
 	"database/sql"
 	"fmt"
 	"log"
-	"sdle/server/utils/messageStruct"
+	"sdle/server/database"
+	"sdle/server/serverCommunicator"
 	"sdle/server/utils/CRDT/lexCounter"
 	shoppingList "sdle/server/utils/CRDT/shoppingList"
-	"sdle/server/serverCommunicator"
+	"sdle/server/utils/messageStruct"
+
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -79,7 +81,7 @@ func main() {
 
 	ShopListExample()
 	
-	const filename = "server.db"
+	filename := fmt.Sprintf("./dbs/server-%s.db", uuid.New())
 	db, err := sql.Open("sqlite3", filename)
 
 	if err != nil {

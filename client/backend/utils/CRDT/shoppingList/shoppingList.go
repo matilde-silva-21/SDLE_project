@@ -44,9 +44,6 @@ func CreateFromStrings(listName, url, list, state string) ShoppingList {
 	listObject := LexCounter.Create[string, int]("list")
 	stateObject := LexCounter.Create[string, int]("state")
 
-	fmt.Println(listObject)
-	fmt.Println(stateObject)
-
 	err := json.Unmarshal([]byte(list), &listObject)
 
 	if(err != nil){
@@ -425,7 +422,7 @@ func MessageStructToCRDT(mess messageStruct.MessageStruct) ShoppingList{
 }
 
 func DatabaseShoppingListToCRDT(list *database.ShoppingListModel) ShoppingList{
-	return CreateFromStrings((*list).Url, (*list).Name, (*list).List, (*list).State)
+	return CreateFromStrings((*list).Name, (*list).Url, (*list).List, (*list).State)
 
 }
 

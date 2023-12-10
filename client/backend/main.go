@@ -38,11 +38,6 @@ func main() {
 		fmt.Println(createError.Error())
 		return
 	}
-	
-	seedError := sqliteRepository.Seed()
-	if seedError != nil {
-		fmt.Println(seedError.Error())
-	}
 
 	router := gin.Default()
 	api.SetDB(sqliteRepository)
@@ -60,7 +55,7 @@ func main() {
 		AllowHeaders: []string{"Content-Type, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin"},
 	}))
 
-	router.Use(api.SetMessagesToSendChannel(messagesToSend))
+	//router.Use(api.SetMessagesToSendChannel(messagesToSend))
 	
 	router.POST("/login", api.Login)
 	router.GET("/lists", api.GetShoppingLists)
@@ -69,7 +64,8 @@ func main() {
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
-	router.POST("lists/:url/upload", api.UploadList)
+	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend), api.UploadList)
+	router.POST("lists/:url/fetch", api.SetListsToAddChannel(listsToAdd), api.FetchList)
 
 	router.Run("localhost:8082")
 }
