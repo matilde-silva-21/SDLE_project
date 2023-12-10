@@ -15,7 +15,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
 func main() {
 
 	port := os.Args[1]
@@ -29,6 +28,8 @@ func main() {
 	writeListsToDatabase := make(chan string, 100)
 
 	filename := fmt.Sprintf("./dbs/local-%s.db", port)
+	connectedChannel := make(chan bool, 2)
+
 	db, err := sql.Open("sqlite3", filename)
 
 	if err != nil {
@@ -42,7 +43,11 @@ func main() {
 		return
 	}
 
-	go communicator.StartClientCommunication(listsToAdd, messagesToSend, writeListsToDatabase, sqliteRepository)
+	go communicator.StartClientCommunication(connectedChannel, listsToAdd, messagesToSend, writeListsToDatabase, sqliteRepository)
+
+	connected := <- connectedChannel
+
+	log.Printf("RabbitMQ connection: %b\n", connected)
 
 	router := gin.Default()
 	api.SetDB(sqliteRepository)
@@ -59,6 +64,10 @@ func main() {
 		ExposeHeaders: []string{"Access-Control-Allow-Headers"},
 		AllowHeaders: []string{"Content-Type, Access-Control-Allow-Credentials, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin"},
 	}))
+
+	router.Use(api.SetMessagesToSendChannel(messagesToSend))
+	router.Use(api.SetListsToAddChannel(listsToAdd))
+	router.Use(api.SetWriteListsToDatabaseChannel(writeListsToDatabase))
 	
 	router.POST("/login", api.Login)
 	router.GET("/lists", api.GetShoppingLists)
@@ -67,8 +76,25 @@ func main() {
 	router.GET("/lists/:url", api.GetShoppingList)
 	router.POST("/lists/:url/add", api.AddItemToShoppingList)
 	router.POST("/lists/:url/remove", api.RemoveItemFromShoppingList)
-	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend), api.UploadList)
-	router.POST("lists/:url/fetch", api.SetListsToAddChannel(listsToAdd), api.SetWriteListsToDatabaseChannel(writeListsToDatabase), api.FetchList)
+	router.POST("lists/:url/upload", api.SetMessagesToSendChannel(messagesToSend),func(c *gin.Context) {
+		newVal := GetNewConnectedValue(connected, connectedChannel)
+		api.UploadList(c, newVal)
+	})
+	router.POST("lists/:url/fetch", api.SetListsToAddChannel(listsToAdd), func(c *gin.Context) {
+		newVal := GetNewConnectedValue(connected, connectedChannel)
+		api.FetchList(c, newVal)
+	})
 
 	router.Run(fmt.Sprintf("localhost:%s", port))
+}
+
+func GetNewConnectedValue(connected bool, connectedChannel chan bool) bool{
+
+	select {
+		case newValue := <- connectedChannel:
+			return newValue
+		default:
+			return connected
+	}
+	
 }

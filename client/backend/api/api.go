@@ -331,11 +331,17 @@ func SetMessagesToSendChannel(ch chan messageStruct.MessageStruct) gin.HandlerFu
     }
 }
 
-func UploadList(c *gin.Context) {
+func UploadList(c *gin.Context, connected bool) {
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
 		return
 	}
+
+	
+	if !connected {
+		return
+	}
+
 
 	var username, cookieErr = getUsernameFromCookie(c)
 	if cookieErr != nil {
@@ -396,9 +402,14 @@ func SetWriteListsToDatabaseChannel(ch chan string) gin.HandlerFunc {
 	}
 }
 
-func FetchList(c *gin.Context) {
+
+func FetchList(c *gin.Context, connected bool) {
 	if !isLoggedIn(c) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	if !connected {
 		return
 	}
 

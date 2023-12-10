@@ -1,4 +1,4 @@
 /tmp
 local.db
 local.db-journal
-./dbs/*
+dbs/*
