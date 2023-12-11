@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	//"sdle/m/v2/communication/communicator"
 	"sdle/m/v2/database"
@@ -572,11 +573,12 @@ func AddNewShoppingList(c *gin.Context, connected bool) {
 	fmt.Println(listUrl)
 
 	newShoppingList := database.ShoppingListModel{Url: listUrl}
-	newList, createErr := newShoppingList.Read(db)
+
+	/*newList, createErr := newShoppingList.Read(db)
 	if createErr != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "failed to create new shopping list"})
 		return
-	}
+	}*/
 
 	var username, cookieErr = getUsernameFromCookie(c)
 	if cookieErr != nil {
@@ -609,27 +611,37 @@ func AddNewShoppingList(c *gin.Context, connected bool) {
         return
     }
 
+	newShoppingList = database.ShoppingListModel{Id: 0, Name: listUrl, Url: listUrl, List: "{\"Map\":{}}}", State: "{\"Map\":{}}}"} 
+	fmt.Println(newShoppingList)
+
     writeListsToDatabase := ch.(chan string)
 
-	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(newList.(*database.ShoppingListModel))
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(&newShoppingList)
 	messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Read)
 	message, _ := messageStruct.JSONToMessage(messageJSON)
 
-	listsToAdd <- newShoppingList.Url
+	fmt.Println(message)
+
+	listsToAdd <- listUrl
     
     messagesToSend <- message
     
     log.Printf("Sent read request to orchestrator for list %s.", message.ListURL)
 
-    writeListsToDatabase <- newShoppingList.Url
+    writeListsToDatabase <- listUrl
 
-	newUserList := database.UserList{UserID: username, ListID: newList.(*database.ShoppingListModel).Id}
-	_, err := newUserList.Create(db)
+	time.Sleep(2 * time.Second)
+	newShopping, err := newShoppingList.Read(db)
+	fmt.Println(newShopping)
+
+	newUserList := database.UserList{UserID: username, ListID: newShopping.(*database.ShoppingListModel).Id}
+	_, err = newUserList.Create(db)
+
 	if err != nil {
 		fmt.Println(err)
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "failed to create new user list entry"})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, newList)
+	c.IndentedJSON(http.StatusOK, newShopping)
 }

@@ -71,9 +71,8 @@ func ReadAndMergeCRDT(serverMsg messageStruct.MessageStruct, repo *database.SQLi
 
 	localList, err := dbList.Read(repo)
 	if(err != nil){
-		log.Print("Error reading from memory.")
-		var dummy shoppingList.ShoppingList
-		return dummy, err
+		log.Print("No local copy.")
+		return remoteList, nil
 	}
 	localCRDT := shoppingList.DatabaseShoppingListToCRDT(localList.(*database.ShoppingListModel))
 	fmt.Println(remoteList)

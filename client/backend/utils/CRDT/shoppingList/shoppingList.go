@@ -48,16 +48,16 @@ func CreateFromStrings(listName, url, list, state string) ShoppingList {
 
 	if(err != nil){
 		fmt.Println("Error:", err)
-		var fake ShoppingList
-		return fake
+		/*var fake ShoppingList
+		return fake*/
 	}
 
 	err = json.Unmarshal([]byte(state), &stateObject)
 
 	if(err != nil){
 		fmt.Println("Error:", err)
-		var fake ShoppingList
-		return fake
+		/*var fake ShoppingList
+		return fake*/
 	}
 
 	return ShoppingList{url: url, name: listName, list: listObject, state: stateObject}
