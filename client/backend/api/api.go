@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
+
 	//"sdle/m/v2/communication/communicator"
 	"sdle/m/v2/database"
 	"sdle/m/v2/utils/CRDT/shoppingList"
@@ -553,4 +555,81 @@ func FetchList(c *gin.Context, connected bool) {
 	writeListsToDatabase <- message.ListURL
 
 	c.IndentedJSON(http.StatusOK, gin.H{"msg": "list fetched successfully"})
+}
+
+func AddNewShoppingList(c *gin.Context, connected bool) {
+	if !isLoggedIn(c) {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"msg": "user must be logged in"})
+		return
+	}
+
+	if !connected {
+		return
+	}
+
+	url := c.Request.URL.String()
+	listUrl := strings.Split(url, "/")[2]
+	fmt.Println(listUrl)
+
+	newShoppingList := database.ShoppingListModel{Url: listUrl}
+	newList, createErr := newShoppingList.Read(db)
+	if createErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "failed to create new shopping list"})
+		return
+	}
+
+	var username, cookieErr = getUsernameFromCookie(c)
+	if cookieErr != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "error getting username from cookie"})
+		return
+	}
+
+	
+	ch, ok := c.Get("listsToAdd")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    listsToAdd := ch.(chan string)
+
+
+	ch, ok = c.Get("messagesToSend")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    messagesToSend := ch.(chan messageStruct.MessageStruct)
+
+
+	ch, ok = c.Get("writeListsToDatabase")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Channel not found"})
+        return
+    }
+
+    writeListsToDatabase := ch.(chan string)
+
+	shoppingListCRDT := shoppingList.DatabaseShoppingListToCRDT(newList.(*database.ShoppingListModel))
+	messageJSON := shoppingListCRDT.ConvertToMessageFormat(username, messageStruct.Read)
+	message, _ := messageStruct.JSONToMessage(messageJSON)
+
+	listsToAdd <- newShoppingList.Url
+    
+    messagesToSend <- message
+    
+    log.Printf("Sent read request to orchestrator for list %s.", message.ListURL)
+
+    writeListsToDatabase <- newShoppingList.Url
+
+	newUserList := database.UserList{UserID: username, ListID: newList.(*database.ShoppingListModel).Id}
+	_, err := newUserList.Create(db)
+	if err != nil {
+		fmt.Println(err)
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"msg": "failed to create new user list entry"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, newList)
 }

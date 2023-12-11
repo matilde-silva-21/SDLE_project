@@ -7,10 +7,21 @@ export default function ModalAdd({ lists, setLists }) {
     const [url, setUrl] = useState("")
 
     async function addList() {
-        const response = await fetch(`${backendIP}/lists/${url}/fetch`);
+        const response = await fetch(`${backendIP}/lists/${url}/addNew`, {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'include',
+          body: '',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          } 
+        });
 
         if (response.ok) {
-            console.log("New shopping list added successfully")
+          const newList = await response.json()
+          setLists([...lists, newList])
+          console.log("New shopping list added successfully")
         }
     }
     

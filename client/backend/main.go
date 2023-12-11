@@ -81,6 +81,10 @@ func main() {
 		newVal := GetNewConnectedValue(connected, connectedChannel)
 		api.FetchList(c, newVal)
 	})
+	router.POST("lists/:url/addNew", func(c *gin.Context) {
+		newVal := GetNewConnectedValue(connected, connectedChannel)
+		api.AddNewShoppingList(c, newVal)
+	})
 
 	router.Run("localhost:8082")
 }
